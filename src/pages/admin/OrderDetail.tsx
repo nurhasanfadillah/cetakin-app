@@ -66,6 +66,8 @@ export default function AdminOrderDetail() {
   const queryClient = useQueryClient()
   const [internalNotes, setInternalNotes] = useState('')
   const [finalPrice, setFinalPrice] = useState('')
+  const [shippingCost, setShippingCost] = useState('')
+  const [discount, setDiscount] = useState('')
   const [paymentLink, setPaymentLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [generatingLink, setGeneratingLink] = useState(false)
@@ -111,13 +113,21 @@ export default function AdminOrderDetail() {
   })
 
   const updatePriceMutation = useMutation({
-    mutationFn: async (price: number | null) => {
+    mutationFn: async (data: { final_price?: number | null; shipping_cost?: number; discount?: number }) => {
+      const updateData: Record<string, unknown> = {}
+      if (data.final_price !== undefined) updateData.final_price = data.final_price
+      if (data.shipping_cost !== undefined) updateData.shipping_cost = data.shipping_cost
+      if (data.discount !== undefined) updateData.discount = data.discount
+      if (data.final_price !== undefined || data.shipping_cost !== undefined || data.discount !== undefined) {
+        const price = data.final_price ?? 0
+        const shipping = data.shipping_cost ?? 0
+        const disc = data.discount ?? 0
+        updateData.total_amount = price + shipping - disc
+      }
+      
       const { error } = await supabase
         .from('orders')
-        .update({ 
-          final_price: price,
-          total_amount: price ? price + (order?.shipping_cost || 0) - (order?.discount || 0) : null
-        })
+        .update(updateData)
         .eq('id', id)
       if (error) throw error
     },
@@ -240,7 +250,13 @@ Cetakin.com`
     )
   }
 
-  const totalAmount = (order.final_price || order.estimated_price || 0) + (order.shipping_cost || 0) - order.discount
+  const calcTotal = (fp: string, sc: string, d: string) => {
+    const final = fp ? parseInt(fp) : (order?.final_price || order?.estimated_price || 0)
+    const ship = sc ? parseInt(sc) : (order?.shipping_cost || 0)
+    const disc = d ? parseInt(d) : (order?.discount || 0)
+    return final + ship - disc
+  }
+  const totalAmount = calcTotal(finalPrice, shippingCost, discount)
 
   return (
     <div className="space-y-6">
@@ -450,41 +466,51 @@ Cetakin.com`
               <CardTitle>Harga</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Estimasi</span>
-                <span>{formatCurrency(order.estimated_price)}</span>
+              <div>
+                <label className="text-sm text-text-muted">Harga Final (Rp)</label>
+                <input
+                  type="number"
+                  placeholder={formatCurrency(order.final_price || order.estimated_price || 0)}
+                  defaultValue={order.final_price || order.estimated_price || ''}
+                  onChange={(e) => setFinalPrice(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Ongkir</span>
-                <span>{formatCurrency(order.shipping_cost)}</span>
+              <div>
+                <label className="text-sm text-text-muted">Ongkir (Rp)</label>
+                <input
+                  type="number"
+                  defaultValue={order.shipping_cost || 0}
+                  onChange={(e) => setShippingCost(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text-muted">Diskon</span>
-                <span className="text-danger">-{formatCurrency(order.discount)}</span>
+              <div>
+                <label className="text-sm text-text-muted">Diskon (Rp)</label>
+                <input
+                  type="number"
+                  defaultValue={order.discount || 0}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                />
               </div>
               <div className="border-t pt-3 flex justify-between font-bold">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(totalAmount)}</span>
               </div>
-
-              <div className="pt-2 space-y-2">
-                <input
-                  type="number"
-                  placeholder="Harga Final"
-                  value={finalPrice}
-                  onChange={(e) => setFinalPrice(e.target.value)}
-                  className="w-full h-11 rounded-lg border border-border bg-background px-4 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                />
-                <Button 
-                  className="w-full" 
-                  onClick={() => updatePriceMutation.mutate(finalPrice ? parseInt(finalPrice) : null)}
-                  disabled={updatePriceMutation.isPending || !finalPrice}
-                >
-                  {updatePriceMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : 'Update Harga'}
-                </Button>
-              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => updatePriceMutation.mutate({
+                  final_price: finalPrice ? parseInt(finalPrice) : (order.final_price || order.estimated_price),
+                  shipping_cost: shippingCost ? parseInt(shippingCost) : (order.shipping_cost || 0),
+                  discount: discount ? parseInt(discount) : (order.discount || 0),
+                })}
+                disabled={updatePriceMutation.isPending}
+              >
+                {updatePriceMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : 'Update Harga'}
+              </Button>
             </CardContent>
           </Card>
 
