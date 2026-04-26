@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (phone: string, password: string) => {
     try {
       const { data, error } = await supabase.rpc('login_with_phone', {
-        p_phone: phone,
-        p_password: password
+        x_phone: phone,
+        x_password: password
       })
 
       if (error) {
@@ -85,10 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (data: SignUpData) => {
     try {
       const { error } = await supabase.rpc('register_with_phone', {
-        p_full_name: data.fullName,
-        p_phone: data.phone,
-        p_email: data.email || null,
-        p_password: data.password
+        x_full_name: data.fullName,
+        x_phone: data.phone,
+        x_password: data.password,
+        x_email: data.email || null
       })
 
       if (error) {
