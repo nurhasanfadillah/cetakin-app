@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (phone: string, password: string) => {
     try {
       const { data, error } = await supabase.rpc('login_with_phone', {
-        x_phone: phone,
-        x_password: password
+        p_phone: phone,
+        p_password: password
       })
 
       if (error) {
@@ -78,6 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null, user: profile }
     } catch (err: unknown) {
       const error = err as Error
+      if (error.message.includes('Nomor HP tidak terdaftar') ||
+          error.message.includes('Password salah') ||
+          error.message.includes('tidak aktif')) {
+        return { error: error.message }
+      }
       return { error: error.message || 'Terjadi kesalahan' }
     }
   }
@@ -85,10 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (data: SignUpData) => {
     try {
       const { error } = await supabase.rpc('register_with_phone', {
-        x_full_name: data.fullName,
-        x_phone: data.phone,
-        x_password: data.password,
-        x_email: data.email || null
+        p_full_name: data.fullName,
+        p_phone: data.phone,
+        p_password: data.password,
+        p_email: data.email || null
       })
 
       if (error) {
