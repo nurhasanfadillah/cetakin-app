@@ -11,15 +11,13 @@ const orderSchema = z.object({
   customer_name: z.string().min(2, 'Nama minimal 2 karakter'),
   customer_phone: z.string().min(10, 'Nomor WhatsApp minimal 10 digit'),
   customer_email: z.string().email('Email tidak valid').optional().or(z.literal('')),
-  service_type: z.enum(['print_dtf_meteran', 'print_banyak_desain', 'maklon_vendor', 'bantuan_layout', 'bantu_desain']),
+  service_type: z.string().min(1, 'Pilih jenis layanan'),
   estimated_size: z.string().optional(),
   deadline: z.string().optional(),
   pickup_method: z.enum(['pickup', 'shipping']),
   shipping_address: z.string().optional(),
   shipping_city: z.string().optional(),
   customer_notes: z.string().optional(),
-  create_account: z.boolean().optional(),
-  password: z.string().optional(),
 })
 
 type OrderFormData = z.infer<typeof orderSchema>
@@ -47,13 +45,11 @@ export default function OrderPage() {
     resolver: zodResolver(orderSchema),
     defaultValues: {
       pickup_method: 'pickup',
-      service_type: 'print_dtf_meteran',
-      create_account: false,
+      service_type: '',
     },
   })
 
   const pickupMethod = watch('pickup_method')
-  const createAccount = watch('create_account')
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -134,6 +130,32 @@ export default function OrderPage() {
       }
 
       setUploadProgress(100)
+      
+      const serviceLabels: Record<string, string> = {
+        'print_dtf_meteran': 'Print DTF Meteran',
+        'print_banyak_desain': 'Print Banyak Desain Sekaligus',
+        'maklon_vendor': 'Maklon Print DTF Vendor',
+        'bantuan_layout': 'Bantuan Layout Hemat Area Cetak',
+        'bantu_desain': 'Bantu Desain Ringan',
+      }
+      
+      const serviceLabel = serviceLabels[data.service_type] || data.service_type
+      const waMessage = `📋 *Order Baru - Cetakin.com*
+
+*Nama:* ${data.customer_name}
+*No. WA:* ${data.customer_phone}
+*Email:* ${data.customer_email || '-'}
+*Layanan:* ${serviceLabel}
+*Ukuran:* ${data.estimated_size || '-'}
+*Deadline:* ${data.deadline || '-'}
+*Pengiriman:* ${data.pickup_method === 'pickup' ? 'Ambil sendiri' : 'Dikirim'}
+${data.pickup_method === 'shipping' ? `*Alamat:* ${data.shipping_address}\n*Kota:* ${data.shipping_city}` : ''}
+*Catatan:* ${data.customer_notes || '-'}
+*No. Order:* ${orderNumber}
+*Jumlah File:* ${files.length}`
+
+      const waUrl = `https://wa.me/6282113133165?text=${encodeURIComponent(waMessage)}`
+      window.open(waUrl, '_blank')
       navigate(`/order/success/${orderNumber}`)
     } catch (error) {
       console.error('Order submission error:', error)
@@ -441,35 +463,6 @@ Mohon dilengkapi cek file dan estimasi harganya.`
             )}
           </section>
 
-          {/* Create Account */}
-          <section className="bg-surface rounded-xl border border-border p-6">
-            <label className="flex items-start gap-4 cursor-pointer">
-              <input
-                {...register('create_account')}
-                type="checkbox"
-                className="w-5 h-5 mt-0.5 rounded border-border text-primary focus:ring-primary"
-              />
-              <div>
-                <span className="font-medium">Buat akun untuk cek status & riwayat pesanan</span>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Centang jika ingin membuat akun member
-                </p>
-              </div>
-            </label>
-
-            {createAccount && (
-              <div className="mt-4 pl-9 animate-in fade-in slide-in-from-top-2">
-                <label className="block text-sm font-medium mb-1.5">Password</label>
-                <input
-                  {...register('password')}
-                  type="password"
-                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
-                  placeholder="Minimal 6 karakter"
-                />
-              </div>
-            )}
-          </section>
-
           {/* Submit */}
           <div className="flex flex-col gap-4">
             <Button type="submit" variant="accent" size="lg" disabled={isSubmitting || uploading} className="group">
@@ -480,7 +473,7 @@ Mohon dilengkapi cek file dan estimasi harganya.`
                 </>
               ) : (
                 <>
-                  Kirim Order
+                  Kirim Order via WhatsApp
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -488,7 +481,7 @@ Mohon dilengkapi cek file dan estimasi harganya.`
 
             <Button type="button" variant="whatsapp" size="lg" onClick={openWhatsApp}>
               <MessageCircle className="w-5 h-5 mr-2" />
-              Atau chat via WhatsApp
+              Atau chat via WhatsApp dulu
             </Button>
           </div>
         </form>
