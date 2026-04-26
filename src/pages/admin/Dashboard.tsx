@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   ShoppingCart, 
   Clock, 
@@ -10,13 +10,19 @@ import {
   TrendingUp,
   ChevronRight,
   Search,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  X,
+  Loader2,
+  Truck,
+  MapPin
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, type BadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import LoadingSpinner from '@/components/ui/loading'
 import { getDashboardStats, getOrders } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import type { OrderStatus, PaymentStatus } from '@/types'
 
 const statusConfig: Record<OrderStatus, { label: string; variant: BadgeVariant }> = {
@@ -51,9 +57,30 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+const SERVICE_OPTIONS = [
+  { value: 'print_dtf_meteran', label: 'Print DTF Meteran' },
+  { value: 'print_banyak_desain', label: 'Print Banyak Desain Sekaligus' },
+  { value: 'maklon_vendor', label: 'Maklon Print DTF Vendor' },
+  { value: 'bantuan_layout', label: 'Bantuan Layout Hemat Area Cetak' },
+  { value: 'bantu_desain', label: 'Bantu Desain Ringan' },
+]
+
 export default function AdminDashboard() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showQuickOrder, setShowQuickOrder] = useState(false)
+  const [quickOrderData, setQuickOrderData] = useState({
+    customer_name: '',
+    customer_phone: '',
+    customer_email: '',
+    service_type: 'print_dtf_meteran',
+    estimated_size: '',
+    pickup_method: 'pickup' as 'pickup' | 'shipping',
+    shipping_address: '',
+    shipping_city: '',
+    customer_notes: '',
+  })
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['admin-dashboard-stats'],
@@ -81,6 +108,58 @@ export default function AdminDashboard() {
     refetchOrders()
   }
 
+  const generateOrderNumber = () => {
+    const date = new Date()
+    const year = date.getFullYear().toString().slice(-2)
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+    return `ORD-${year}${month}-${random}`
+  }
+
+  const createOrderMutation = useMutation({
+    mutationFn: async () => {
+      const orderNumber = generateOrderNumber()
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          order_number: orderNumber,
+          customer_name: quickOrderData.customer_name,
+          customer_phone: quickOrderData.customer_phone,
+          customer_email: quickOrderData.customer_email || null,
+          service_type: quickOrderData.service_type,
+          estimated_size: quickOrderData.estimated_size || null,
+          pickup_method: quickOrderData.pickup_method,
+          shipping_address: quickOrderData.pickup_method === 'shipping' ? quickOrderData.shipping_address : null,
+          shipping_city: quickOrderData.pickup_method === 'shipping' ? quickOrderData.shipping_city : null,
+          customer_notes: quickOrderData.customer_notes || null,
+          status: 'MENUNGGU_REVIEW_FILE',
+          payment_status: 'UNPAID',
+          discount: 0,
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      return order
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders-recent'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard-stats'] })
+      setShowQuickOrder(false)
+      setQuickOrderData({
+        customer_name: '',
+        customer_phone: '',
+        customer_email: '',
+        service_type: 'print_dtf_meteran',
+        estimated_size: '',
+        pickup_method: 'pickup',
+        shipping_address: '',
+        shipping_city: '',
+        customer_notes: '',
+      })
+    },
+  })
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -89,11 +168,159 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
           <p className="text-text-secondary">Selamat datang di panel admin CetakIn</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+        <div className="flex items-center gap-2">
+          <Button variant="accent" size="sm" onClick={() => setShowQuickOrder(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Order Baru
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
         </div>
+      </div>
+
+      {/* Quick Order Modal */}
+      {showQuickOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="text-lg">Order Baru (Quick)</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowQuickOrder(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nama Customer *</label>
+                <input
+                  type="text"
+                  value={quickOrderData.customer_name}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, customer_name: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Nama lengkap"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">No. WhatsApp *</label>
+                <input
+                  type="text"
+                  value={quickOrderData.customer_phone}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, customer_phone: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="08xxxxxxxxxx"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={quickOrderData.customer_email}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, customer_email: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Layanan *</label>
+                <select
+                  value={quickOrderData.service_type}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, service_type: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                >
+                  {SERVICE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Ukuran/Panjang</label>
+                <input
+                  type="text"
+                  value={quickOrderData.estimated_size}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, estimated_size: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Contoh: 30cm x 40cm atau 1 meter"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Pengambilan</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickOrderData({ ...quickOrderData, pickup_method: 'pickup' })}
+                    className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      quickOrderData.pickup_method === 'pickup' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium">Ambil Sendiri</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickOrderData({ ...quickOrderData, pickup_method: 'shipping' })}
+                    className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      quickOrderData.pickup_method === 'shipping' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <Truck className="w-4 h-4" />
+                    <span className="text-sm font-medium">Dikirim</span>
+                  </button>
+                </div>
+              </div>
+              {quickOrderData.pickup_method === 'shipping' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Alamat Pengiriman</label>
+                    <textarea
+                      value={quickOrderData.shipping_address}
+                      onChange={(e) => setQuickOrderData({ ...quickOrderData, shipping_address: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      placeholder="Alamat lengkap"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Kota</label>
+                    <input
+                      type="text"
+                      value={quickOrderData.shipping_city}
+                      onChange={(e) => setQuickOrderData({ ...quickOrderData, shipping_city: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      placeholder="Nama kota"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Catatan</label>
+                <textarea
+                  value={quickOrderData.customer_notes}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, customer_notes: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Catatan tambahan..."
+                  rows={2}
+                />
+              </div>
+              <Button
+                variant="accent"
+                className="w-full"
+                onClick={() => createOrderMutation.mutate()}
+                disabled={createOrderMutation.isPending || !quickOrderData.customer_name || !quickOrderData.customer_phone}
+              >
+                {createOrderMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Buat Order
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
         {/* Stats Cards */}
         {statsLoading ? (
