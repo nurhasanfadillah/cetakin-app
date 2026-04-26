@@ -1,11 +1,11 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { 
   LayoutDashboard, Package, Users, FileText, Image, 
   CreditCard, Settings, ChevronLeft, ChevronRight,
   LogOut, Menu, X
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 const adminNavItems = [
   { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -31,10 +31,9 @@ const memberNavItems = [
 
 interface DashboardLayoutProps {
   variant: 'admin' | 'member'
-  children: React.ReactNode
 }
 
-export default function DashboardLayout({ variant, children }: DashboardLayoutProps) {
+export default function DashboardLayout({ variant }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, signOut } = useAuth()
@@ -146,9 +145,14 @@ export default function DashboardLayout({ variant, children }: DashboardLayoutPr
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {children}
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

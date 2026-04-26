@@ -248,7 +248,7 @@ export async function getSetting<T>(key: string) {
     .from('site_settings')
     .select('value')
     .eq('key', key)
-    .single()
+    .maybeSingle()
   
   return { 
     data: data?.value as T | null, 

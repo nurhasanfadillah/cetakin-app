@@ -120,9 +120,9 @@ Mohon dibantu cek file dan estimasi harganya.`
             </Link>
             
             <nav className="hidden md:flex items-center gap-8">
-              <Link to="#samples" className="text-sm text-text-secondary hover:text-foreground transition-colors">Sample</Link>
-              <Link to="#process" className="text-sm text-text-secondary hover:text-foreground transition-colors">Cara Kerja</Link>
-              <Link to="#faq" className="text-sm text-text-secondary hover:text-foreground transition-colors">FAQ</Link>
+              <a href="#samples" className="text-sm text-text-secondary hover:text-foreground transition-colors">Sample</a>
+              <a href="#process" className="text-sm text-text-secondary hover:text-foreground transition-colors">Cara Kerja</a>
+              <a href="#faq" className="text-sm text-text-secondary hover:text-foreground transition-colors">FAQ</a>
               <Button variant="whatsapp" size="sm" onClick={() => openWhatsApp()}>
                 <MessageCircle className="w-4 h-4" />
                 WhatsApp
@@ -136,9 +136,9 @@ Mohon dibantu cek file dan estimasi harganya.`
 
           {mobileMenuOpen && (
             <nav className="md:hidden mt-4 flex flex-col gap-4 pb-4">
-              <Link to="#samples" onClick={() => setMobileMenuOpen(false)}>Sample</Link>
-              <Link to="#process" onClick={() => setMobileMenuOpen(false)}>Cara Kerja</Link>
-              <Link to="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
+              <a href="#samples" onClick={() => setMobileMenuOpen(false)} className="text-text-secondary hover:text-foreground transition-colors">Sample</a>
+              <a href="#process" onClick={() => setMobileMenuOpen(false)} className="text-text-secondary hover:text-foreground transition-colors">Cara Kerja</a>
+              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-text-secondary hover:text-foreground transition-colors">FAQ</a>
               <Button variant="whatsapp" size="sm" onClick={() => openWhatsApp()}>WhatsApp</Button>
             </nav>
           )}
@@ -311,7 +311,7 @@ Mohon dibantu cek file dan estimasi harganya.`
                   </Card>
                   
                   {/* Connector line */}
-                  {PROCESS_STEPS.length - 1 && (
+                  {idx < PROCESS_STEPS.length - 1 && (
                     <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
                       <ArrowRight className="w-5 h-5 text-text-subtle/30" />
                     </div>
@@ -398,7 +398,7 @@ Mohon dibantu cek file dan estimasi harganya.`
                     <HelpCircle className={`w-5 h-5 flex-shrink-0 transition-transform ${faqOpen === idx ? 'rotate-180' : ''}`} />
                   </button>
                   {faqOpen === idx && (
-                    <div className="px-4 pb-4 text-text-muted" dangerouslySetInnerHTML={{ __html: item.answer }} />
+                    <div className="px-4 pb-4 text-text-muted">{item.answer}</div>
                   )}
                 </div>
               ))

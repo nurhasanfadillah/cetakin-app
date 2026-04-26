@@ -51,9 +51,16 @@ export default function OrderPage() {
 
   const pickupMethod = watch('pickup_method')
 
+  const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files)
+      const oversized = newFiles.filter(f => f.size > MAX_FILE_SIZE)
+      if (oversized.length > 0) {
+        alert(`File berikut melebihi batas 20MB: ${oversized.map(f => f.name).join(', ')}`)
+        return
+      }
       setFiles([...files, ...newFiles])
     }
   }
@@ -227,6 +234,7 @@ alert('Terjadi kesalahan. Silakan coba lagi.')
                   {...register('service_type')}
                   className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                 >
+                  <option value="" disabled>— Pilih Jenis Layanan —</option>
                   {SERVICE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -263,7 +271,7 @@ alert('Terjadi kesalahan. Silakan coba lagi.')
               </div>
               <div>
                 <h2 className="text-lg font-semibold">Pengambilan</h2>
-                <p className="text-sm text-muted-foreground">Bagaimana cara拿到 hasil cetak?</p>
+                <p className="text-sm text-muted-foreground">Bagaimana cara mendapatkan hasil cetak?</p>
               </div>
             </div>
             
