@@ -12,6 +12,7 @@ import AdminOrders from './pages/admin/Orders'
 import AdminOrderDetail from './pages/admin/OrderDetail'
 import AdminMembers from './pages/admin/Members'
 import AdminInvoices from './pages/admin/Invoices'
+import AdminInvoiceDetail from './pages/admin/InvoiceDetail'
 import AdminFiles from './pages/admin/Files'
 import AdminMedia from './pages/admin/Media'
 import AdminPriceList from './pages/admin/PriceList'
@@ -36,6 +37,7 @@ function AdminRoutes() {
           <Route path="/orders/:id" element={<AdminOrderDetail />} />
           <Route path="/members" element={<AdminMembers />} />
           <Route path="/invoices" element={<AdminInvoices />} />
+          <Route path="/invoices/:id" element={<AdminInvoiceDetail />} />
           <Route path="/files" element={<AdminFiles />} />
           <Route path="/media" element={<AdminMedia />} />
           <Route path="/price-list" element={<AdminPriceList />} />
