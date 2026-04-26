@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   ArrowLeft,
@@ -11,13 +11,17 @@ import {
   Loader2,
   XCircle,
   Package,
-  Truck
+  Truck,
+  ExternalLink,
+  Copy,
+  CheckCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, type BadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { PaymentStatusBadge } from '@/components/PaymentStatus'
+import { createSnapTransaction } from '@/lib/payment'
 import type { Order, OrderStatus } from '@/types'
 
 const statusConfig: Record<OrderStatus, { label: string; variant: BadgeVariant }> = {
@@ -58,20 +62,24 @@ const formatFileSize = (bytes: number) => {
 
 export default function AdminOrderDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [internalNotes, setInternalNotes] = useState('')
   const [finalPrice, setFinalPrice] = useState('')
+  const [paymentLink, setPaymentLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [generatingLink, setGeneratingLink] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-order', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, files:order_files(*), member:profiles(*)')
+        .select('*, files:order_files(*), member:profiles(*), invoice:invoices(*), payments:payments(*)')
         .eq('id', id)
         .single()
       if (error) throw error
-      return data as Order
+      return data as Order & { invoice?: { id: string }; payments?: { payment_link?: string }[] }
     },
     enabled: !!id,
   })
@@ -119,7 +127,7 @@ export default function AdminOrderDetail() {
     },
   })
 
-  const openWhatsApp = () => {
+const openWhatsApp = () => {
     if (!order) return
     
     const msg = `Halo ${order.customer_name},
@@ -135,6 +143,83 @@ Cetakin.com`
     const waUrl = `https://wa.me/${order.customer_phone.replace(/^0/, '62')}?text=${encodeURIComponent(msg)}`
     window.open(waUrl, '_blank')
   }
+
+  const generatePaymentLink = async () => {
+    if (!order) return
+    
+    try {
+      setGeneratingLink(true)
+      const totalAmount = (order.final_price || order.estimated_price || 0) + (order.shipping_cost || 0) - (order.discount || 0)
+
+      if (totalAmount <= 0) {
+        alert('Harga belum ditentukan. Silakan update harga terlebih dahulu.')
+        return
+      }
+
+      const result = await createSnapTransaction({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        amount: totalAmount,
+        customerName: order.customer_name,
+        customerEmail: order.customer_email || undefined,
+        customerPhone: order.customer_phone,
+        items: [
+          {
+            id: 'service',
+            name: order.service_type || 'Jasa Print DTF',
+            price: order.final_price || order.estimated_price || 0,
+            quantity: 1,
+          },
+          ...(order.shipping_cost ? [{
+            id: 'shipping',
+            name: 'Biaya Pengiriman',
+            price: order.shipping_cost,
+            quantity: 1,
+          }] : []),
+        ],
+      })
+
+      if (result?.redirect_url) {
+        setPaymentLink(result.redirect_url)
+        
+        await supabase.from('orders').update({ payment_status: 'PENDING' }).eq('id', order.id)
+        await supabase.from('payments').insert({
+          order_id: order.id,
+          provider: 'midtrans',
+          status: 'PENDING',
+          amount: totalAmount,
+          payment_link: result.redirect_url,
+        })
+        
+        queryClient.invalidateQueries({ queryKey: ['admin-order', id] })
+      } else {
+        alert('Gagal membuat payment link. Pastikan konfigurasi Midtrans sudah benar.')
+      }
+    } catch (error) {
+      console.error('Generate payment link error:', error)
+      alert('Terjadi kesalahan saat membuat payment link.')
+    } finally {
+      setGeneratingLink(false)
+    }
+  }
+
+  const copyPaymentLink = () => {
+    if (paymentLink) {
+      navigator.clipboard.writeText(paymentLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const goToInvoice = () => {
+    navigate(`/admin/invoice/${order?.id}`)
+  }
+
+  useEffect(() => {
+    if (order) {
+      setInternalNotes(order.internal_notes || '')
+    }
+  }, [order])
 
   if (isLoading) {
     return (
@@ -413,16 +498,48 @@ Cetakin.com`
                 <PaymentStatusBadge status={order.payment_status} />
               </div>
               
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" className="w-full" disabled>
-                  <Send className="w-4 h-4" />
-                  Generate Payment Link
+              {paymentLink ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-success font-medium">Payment Link Generated</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" size="sm" onClick={copyPaymentLink}>
+                      {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {copied ? 'Copied!' : 'Copy Link'}
+                    </Button>
+                    <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="flex-1">
+                      <Button variant="outline" className="w-full" size="sm">
+                        <ExternalLink className="w-4 h-4" />
+                        Open Link
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={generatePaymentLink}
+                  disabled={generatingLink || order.payment_status === 'PAID'}
+                >
+                  {generatingLink ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {order.payment_status === 'PAID' ? 'Sudah Lunas' : 'Generate Payment Link'}
                 </Button>
-                <Button variant="outline" className="w-full" disabled>
-                  <FileText className="w-4 h-4" />
-                  Generate Invoice
-                </Button>
-              </div>
+              )}
+
+              <Button variant="outline" className="w-full" onClick={goToInvoice}>
+                <FileText className="w-4 h-4" />
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(order as any)?.invoice ? 'Lihat Invoice' : 'Generate Invoice'}
+              </Button>
             </CardContent>
           </Card>
 
