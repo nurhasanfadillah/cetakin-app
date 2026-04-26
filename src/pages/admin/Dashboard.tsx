@@ -12,7 +12,6 @@ import {
   Search,
   RefreshCw
 } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, type BadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -83,16 +82,15 @@ export default function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout variant="admin">
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
-            <p className="text-text-secondary">Selamat datang di panel admin CetakIn</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="w-4 h-4 mr-2" />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
+          <p className="text-text-secondary">Selamat datang di panel admin CetakIn</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
         </div>
@@ -272,6 +270,5 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   )
 }
