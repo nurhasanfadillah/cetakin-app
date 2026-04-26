@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Upload, X, FileText, Loader2, ArrowLeft, MessageCircle } from 'lucide-react'
+import { Upload, X, FileText, Loader2, ArrowLeft, MessageCircle, Check, User, FileImage, MapPin, Truck, StickyNote, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 
@@ -159,13 +159,16 @@ Mohon dilengkapi cek file dan estimasi harganya.`
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-surface border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold">Order Cepat</h1>
+            <div>
+              <h1 className="text-xl font-bold">Order Cepat</h1>
+              <p className="text-sm text-muted-foreground">Print DTF Transfer Siap Press</p>
+            </div>
           </div>
         </div>
       </header>
@@ -173,15 +176,23 @@ Mohon dilengkapi cek file dan estimasi harganya.`
       <main className="container mx-auto px-4 py-8">
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl mx-auto space-y-6">
           {/* Customer Info */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Informasi Customer</h2>
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Informasi Customer</h2>
+                <p className="text-sm text-muted-foreground">Siapa yang harus kami hubungi?</p>
+              </div>
+            </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Nama Lengkap *</label>
+                <label className="block text-sm font-medium mb-1.5">Nama Lengkap *</label>
                 <input
                   {...register('customer_name')}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                   placeholder="Nama lengkap Anda"
                 />
                 {errors.customer_name && (
@@ -190,10 +201,10 @@ Mohon dilengkapi cek file dan estimasi harganya.`
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Nomor WhatsApp *</label>
+                <label className="block text-sm font-medium mb-1.5">Nomor WhatsApp *</label>
                 <input
                   {...register('customer_phone')}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                   placeholder="08xxxxxxxxxx"
                 />
                 {errors.customer_phone && (
@@ -202,10 +213,11 @@ Mohon dilengkapi cek file dan estimasi harganya.`
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email (opsional)</label>
+                <label className="block text-sm font-medium mb-1.5">Email (opsional)</label>
                 <input
                   {...register('customer_email')}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  type="email"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                   placeholder="email@example.com"
                 />
                 {errors.customer_email && (
@@ -216,15 +228,23 @@ Mohon dilengkapi cek file dan estimasi harganya.`
           </section>
 
           {/* Order Details */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Detail Order</h2>
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileImage className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Detail Order</h2>
+                <p className="text-sm text-muted-foreground">Pilih layanan yang dibutuhkan</p>
+              </div>
+            </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Jenis Layanan *</label>
+                <label className="block text-sm font-medium mb-1.5">Jenis Layanan *</label>
                 <select
                   {...register('service_type')}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                 >
                   {SERVICE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -235,95 +255,145 @@ Mohon dilengkapi cek file dan estimasi harganya.`
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Estimasi Ukuran/Panjang</label>
+                <label className="block text-sm font-medium mb-1.5">Estimasi Ukuran/Panjang</label>
                 <input
                   {...register('estimated_size')}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                   placeholder="Contoh: 30cm x 40cm atau 1 meter"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Deadline</label>
+                <label className="block text-sm font-medium mb-1.5">Deadline</label>
                 <input
                   {...register('deadline')}
                   type="date"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                 />
               </div>
             </div>
           </section>
 
           {/* Pickup Method */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Pengambilan</h2>
-            
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    {...register('pickup_method')}
-                    type="radio"
-                    value="pickup"
-                  />
-                  <span>Ambil di Workshop</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    {...register('pickup_method')}
-                    type="radio"
-                    value="shipping"
-                  />
-                  <span>Kirim Ekspedisi</span>
-                </label>
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Truck className="w-5 h-5 text-primary" />
               </div>
-
-              {pickupMethod === 'shipping' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Alamat Pengiriman</label>
-                    <textarea
-                      {...register('shipping_address')}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                      placeholder="Alamat lengkap"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Kota Pengiriman</label>
-                    <input
-                      {...register('shipping_city')}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                      placeholder="Nama kota"
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <h2 className="text-lg font-semibold">Pengambilan</h2>
+                <p className="text-sm text-muted-foreground">Bagaimana cara拿到 hasil cetak?</p>
+              </div>
             </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <label 
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  pickupMethod === 'pickup' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <input
+                  {...register('pickup_method')}
+                  type="radio"
+                  value="pickup"
+                  className="sr-only"
+                />
+                <MapPin className={`w-5 h-5 ${pickupMethod === 'pickup' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div>
+                  <span className="font-medium">Ambil di Workshop</span>
+                  <p className="text-xs text-muted-foreground">Cileungsi, Bogor</p>
+                </div>
+                {pickupMethod === 'pickup' && (
+                  <Check className="w-5 h-5 text-primary ml-auto" />
+                )}
+              </label>
+              
+              <label 
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  pickupMethod === 'shipping' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <input
+                  {...register('pickup_method')}
+                  type="radio"
+                  value="shipping"
+                  className="sr-only"
+                />
+                <Truck className={`w-5 h-5 ${pickupMethod === 'shipping' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div>
+                  <span className="font-medium">Kirim Ekspedisi</span>
+                  <p className="text-xs text-muted-foreground">Ke alamat tujuan</p>
+                </div>
+                {pickupMethod === 'shipping' && (
+                  <Check className="w-5 h-5 text-primary ml-auto" />
+                )}
+              </label>
+            </div>
+
+            {pickupMethod === 'shipping' && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Alamat Pengiriman</label>
+                  <textarea
+                    {...register('shipping_address')}
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+                    placeholder="Alamat lengkap termasuk RT/RW"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Kota Pengiriman</label>
+                  <input
+                    {...register('shipping_city')}
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+                    placeholder="Nama kota"
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Notes */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Catatan</h2>
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <StickyNote className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Catatan</h2>
+                <p className="text-sm text-muted-foreground">Informasi tambahan (opsional)</p>
+              </div>
+            </div>
             <textarea
               {...register('customer_notes')}
-              className="w-full px-3 py-2 border border-input rounded-md bg-background"
+              className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
               placeholder="Catatan khusus untuk order..."
               rows={4}
             />
           </section>
 
           {/* File Upload */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Upload File Desain</h2>
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileImage className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Upload File Desain</h2>
+                <p className="text-sm text-muted-foreground">PNG, JPG, PDF, AI, CDR, PSD, ZIP</p>
+              </div>
+            </div>
             
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground mb-2">
+            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+              <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Upload className="w-8 h-8 text-primary" />
+              </div>
+              <p className="text-muted-foreground mb-4">
                 Klik untuk upload atau drag & drop file desain
-              </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Format: PNG, JPG, PDF, AI, CDR, PSD, ZIP
               </p>
               <input
                 type="file"
@@ -334,7 +404,7 @@ Mohon dilengkapi cek file dan estimasi harganya.`
                 id="file-upload"
               />
               <label htmlFor="file-upload">
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" className="cursor-pointer">
                   Pilih File
                 </Button>
               </label>
@@ -345,19 +415,23 @@ Mohon dilengkapi cek file dan estimasi harganya.`
                 {files.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-background rounded-md"
+                    className="flex items-center justify-between p-4 bg-background rounded-lg border border-border"
                   >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-sm truncate max-w-xs">{file.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({(file.size / 1024).toFixed(1)} KB)
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium truncate max-w-xs">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
-                      className="text-muted-foreground hover:text-danger"
+                      className="p-2 text-muted-foreground hover:text-danger hover:bg-danger/10 rounded-lg transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -368,28 +442,28 @@ Mohon dilengkapi cek file dan estimasi harganya.`
           </section>
 
           {/* Create Account */}
-          <section className="bg-surface rounded-lg border border-border p-6">
-            <label className="flex items-center gap-3">
+          <section className="bg-surface rounded-xl border border-border p-6">
+            <label className="flex items-start gap-4 cursor-pointer">
               <input
                 {...register('create_account')}
                 type="checkbox"
-                className="w-4 h-4"
+                className="w-5 h-5 mt-0.5 rounded border-border text-primary focus:ring-primary"
               />
               <div>
                 <span className="font-medium">Buat akun untuk cek status & riwayat pesanan</span>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-1">
                   Centang jika ingin membuat akun member
                 </p>
               </div>
             </label>
 
             {createAccount && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium mb-1">Password</label>
+              <div className="mt-4 pl-9 animate-in fade-in slide-in-from-top-2">
+                <label className="block text-sm font-medium mb-1.5">Password</label>
                 <input
                   {...register('password')}
                   type="password"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                   placeholder="Minimal 6 karakter"
                 />
               </div>
@@ -398,19 +472,22 @@ Mohon dilengkapi cek file dan estimasi harganya.`
 
           {/* Submit */}
           <div className="flex flex-col gap-4">
-            <Button type="submit" variant="accent" size="lg" disabled={isSubmitting || uploading}>
+            <Button type="submit" variant="accent" size="lg" disabled={isSubmitting || uploading} className="group">
               {uploading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   Mengirim... {uploadProgress}%
                 </>
               ) : (
-                'Kirim Order'
+                <>
+                  Kirim Order
+                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </>
               )}
             </Button>
 
             <Button type="button" variant="whatsapp" size="lg" onClick={openWhatsApp}>
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-5 h-5 mr-2" />
               Atau chat via WhatsApp
             </Button>
           </div>

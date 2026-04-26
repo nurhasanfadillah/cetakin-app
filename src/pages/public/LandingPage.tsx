@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, Menu, X, ArrowRight, CheckCircle2, HelpCircle } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { MessageCircle, Menu, X, ArrowRight, CheckCircle2, HelpCircle, MapPin, Clock, Phone, Printer, Sparkles, Zap, Shield, GalleryVertical, Eye, Package, Droplets, Layers, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import LoadingSpinner from '@/components/ui/loading'
+import { getLandingPageContent, getSetting } from '@/lib/db'
 
 const COMPANY = {
   name: 'cetakin.com',
@@ -18,148 +22,73 @@ const HERO = {
   note: 'Layanan belum termasuk kaos dan jasa press.',
 }
 
-const PROBLEM = {
-  title: 'Butuh Partner Print DTF untuk Produksi Harian?',
-  body: 'Order sablon full color, desain custom, logo komunitas, nama berbeda, hingga mini drop brand lokal sering membutuhkan proses cetak yang cepat, rapi, dan fleksibel.\n\ncetakin.com hadir sebagai partner print DTF transfer siap press untuk membantu kebutuhan produksi vendor sablon, konveksi kecil, reseller, dan brand lokal.\n\nAnda cukup kirim file desain. Kami bantu cek file, susun layout bila diperlukan, lalu cetak transfer DTF siap press. Setelah itu hasil bisa Anda press ke kaos, hoodie, tote bag, atau produk apparel lainnya.',
-  cta: 'Minta Price List Vendor',
-}
-
-const SOLUTION = {
-  title: 'Solusi Print DTF Siap Press untuk Kebutuhan Produksi Anda',
-  body: 'Kami fokus pada layanan print DTF transfer siap press, bukan kaos jadi. Layanan ini cocok untuk Anda yang sudah memiliki kaos, heat press, atau proses produksi sendiri, tetapi membutuhkan partner cetak DTF yang rapi, praktis, dan siap digunakan.',
-  benefits: [
-    'Print DTF meteran',
-    'Cocok untuk vendor sablon, konveksi kecil, reseller, dan brand lokal',
-    'Bisa bantu cek file sebelum produksi',
-    'Bisa bantu layout hemat area cetak',
-    'Transfer dikirim dalam kondisi siap press',
-    'Tersedia harga vendor untuk repeat order',
-    'Bisa bantu desain ringan untuk optimasi kualitas gambar',
-    'Proses order mudah via order cepat atau WhatsApp',
-  ],
-}
-
-const AUDIENCE = {
-  title: 'Layanan Ini Cocok untuk Siapa?',
-  cards: [
-    {
-      title: 'Vendor Sablon',
-      description: 'Terima kebutuhan print DTF full color untuk customer Anda dengan proses yang praktis dan siap press. Cocok untuk sablon rumahan, vendor kaos custom, dan usaha sablon kecil.',
-      message: 'Partner print DTF untuk kebutuhan produksi harian.',
-    },
-    {
-      title: 'Konveksi Kecil',
-      description: 'Tambahkan layanan sablon DTF untuk customer Anda dengan alur produksi yang lebih fleksibel dan mudah dikontrol.',
-      message: 'Tambah layanan DTF dengan partner produksi yang praktis.',
-    },
-    {
-      title: 'Reseller Kaos Custom',
-      description: 'Anda siapkan kaos dan kebutuhan customer, cetakin.com bantu print transfer DTF-nya. Cocok untuk reseller yang ingin produksi sesuai order.',
-      message: 'Jualan kaos custom dengan file siap press.',
-    },
-    {
-      title: 'Brand Lokal',
-      description: 'Cetak transfer DTF untuk sample, mini drop, atau stok desain. Press saat order masuk agar produksi lebih fleksibel.',
-      message: 'Tes desain dan mini drop dengan lebih fleksibel.',
-    },
-  ],
-}
-
-const VALUE = {
-  title: 'Kenapa Print DTF di cetakin.com?',
-  body: 'cetakin.com membantu vendor, reseller, konveksi, dan brand lokal mendapatkan print DTF transfer siap press dengan proses yang rapi, praktis, dan mudah dikontrol.',
-  cards: [
-    { title: 'Siap Press', description: 'Transfer DTF dicetak dan dikirim dalam kondisi siap digunakan. Cocok untuk Anda yang sudah punya heat press sendiri.' },
-    { title: 'Layout Hemat Area Cetak', description: 'Gabungkan banyak desain dalam satu area cetak agar lebih efisien dan hemat.' },
-    { title: 'File Bisa Dicek', description: 'Kami bantu cek file dari sisi ukuran, resolusi, background, dan kesiapan cetak sebelum produksi.' },
-    { title: 'Bantu Desain Ringan', description: 'Kami bisa bantu optimalkan kualitas gambar, merapikan file sederhana, atau membuat desain logo/desain ringan sesuai kebutuhan.' },
-    { title: 'Harga Vendor', description: 'Tersedia harga khusus untuk vendor, reseller, dan customer repeat order.' },
-    { title: 'Proses Mudah', description: 'Order bisa lewat form order cepat atau WhatsApp. Kirim file, cek estimasi, konfirmasi, produksi, lalu ambil atau kirim.' },
-  ],
-}
-
-const SERVICES = {
-  title: 'Layanan Print DTF yang Tersedia',
-  items: [
-    {
-      title: 'Print DTF Meteran',
-      description: 'Cocok untuk vendor, reseller, dan konveksi yang membutuhkan cetak transfer DTF berdasarkan panjang meter.',
-      cocok: 'Order customer, desain full color, logo, nama, nomor, merchandise, dan produksi berulang.',
-    },
-    {
-      title: 'Print Banyak Desain Sekaligus',
-      description: 'Susun banyak desain, logo, nama, atau variasi ukuran dalam satu area cetak agar lebih efisien.',
-      cocok: 'Reseller, brand lokal, vendor sablon, dan customer yang ingin memaksimalkan area cetak.',
-    },
-    {
-      title: 'Maklon Print DTF Vendor',
-      description: 'Untuk vendor sablon dan konveksi yang membutuhkan partner print DTF transfer siap press.',
-      cocok: 'Vendor yang sudah punya customer, kaos, dan heat press, tetapi butuh partner print DTF.',
-    },
-    {
-      title: 'Bantuan Layout Hemat Area Cetak',
-      description: 'Kami dapat membantu menyusun file ke dalam layout cetak agar area lebih efisien.',
-      cocok: 'Catatan: Bantuan layout berlaku untuk file yang sudah siap cetak.',
-    },
-    {
-      title: 'Bantu Desain Ringan',
-      description: 'Kami bisa bantu optimalkan kualitas gambar, merapikan file sederhana, menyesuaikan ukuran.',
-      cocok: 'Gratis untuk kebutuhan ringan.',
-    },
-  ],
-}
-
-const ORDER_STEPS = [
-  { title: 'Kirim File Desain', description: 'Kirim file desain lewat order cepat atau WhatsApp. Format bisa berupa PNG transparan, PDF, AI, CDR, PSD, ZIP.' },
-  { title: 'Kami Cek File', description: 'Kami bantu cek ukuran, resolusi, background, dan kesiapan file untuk dicetak.' },
-  { title: 'Estimasi & Harga Final', description: 'Sistem dapat menampilkan estimasi awal. Harga final akan dikonfirmasi admin setelah file dicek.' },
-  { title: 'Invoice & Payment Link', description: 'Setelah file dan harga disetujui, sistem membuat invoice dan payment link.' },
-  { title: 'Produksi Print DTF', description: 'Setelah pembayaran berhasil, file diproses menjadi transfer DTF siap press.' },
-  { title: 'Ambil atau Kirim', description: 'Hasil print bisa diambil langsung di workshop atau dikirim via ekspedisi.' },
+const PRINTING_SAMPLES = [
+  { title: 'DTF Meteran', desc: 'Full color', image: '🎨' },
+  { title: 'Logo Kompleks', desc: 'Detail tinggi', image: '✨' },
+  { title: 'Nama Batch', desc: 'Ukuran sama', image: '📝' },
+  { title: 'Full Print', desc: 'Satu A4', image: '👕' },
 ]
 
-const SYARAT_FILE = {
-  title: 'Syarat File',
-  items: [
-    'File disarankan dalam format PNG transparan, PDF, AI, CDR, PSD, atau ZIP',
-    'Resolusi tinggi dan tidak pecah',
-    'Background transparan jika desain tidak ingin berbentuk kotak',
-    'Ukuran desain sudah jelas',
-    'Warna pada layar bisa sedikit berbeda dengan hasil cetak',
-    'File blur, kecil, atau pecah akan memengaruhi hasil print',
-    'Untuk cetak banyak desain sekaligus, beri jarak aman antar desain agar mudah dipotong',
-  ],
-  cta: 'Ragu file Anda sudah siap cetak? Kirim File untuk Kami Cek.',
-}
+const PROCESS_STEPS = [
+  { num: '01', title: 'Kirim File', desc: 'Upload desain via form atau WhatsApp', icon: Upload },
+  { num: '02', title: 'Cek File', desc: 'Kami review ukuran & resolusi', icon: Eye },
+  { num: '03', title: 'Konfirmasi', desc: 'Setuju, lanjutke pembayaran', icon: CheckCircle2 },
+  { num: '04', title: 'Produksi', desc: 'Cetak DTF siap press', icon: Droplets },
+  { num: '05', title: 'Selesai', desc: 'Ambil atau kirim', icon: Package },
+]
 
-const DISCLAIMER = {
-  title: 'Penting Sebelum Order',
-  body: 'Layanan kami khusus untuk print DTF transfer siap press.\n\nKami tidak menyediakan kaos dan tidak termasuk jasa press.\n\nHasil akhir setelah ditempel dapat dipengaruhi oleh: jenis kain, suhu press, tekanan press, durasi press, cara peel, second press, teknik pencucian.\n\nKami dapat memberikan panduan press dasar untuk membantu Anda mendapatkan hasil terbaik.',
-}
+const GALLERY_IMAGES = [
+  { id: 1, label: 'Sample 1', desc: 'DTF Print Quality', emoji: '🖼️' },
+  { id: 2, label: 'Sample 2', desc: 'Color Result', emoji: '🎯' },
+  { id: 3, label: 'Sample 3', desc: 'Detail Clear', emoji: '🔍' },
+  { id: 4, label: 'Sample 4', desc: 'Finish Ready', emoji: '✅' },
+  { id: 5, label: 'Sample 5', desc: 'Press Result', emoji: '🔥' },
+  { id: 6, label: 'Sample 6', desc: 'Production', emoji: '⚡' },
+]
+
+const BENEFITS_VISUAL = [
+  { icon: Shield, title: 'Siap Press', desc: 'Transfer DTF dalam kondisi siap digunakan langsung.' },
+  { icon: Layers, title: 'Layout Hemat', desc: 'Gabungkan banyak desain dalam satu area.' },
+  { icon: Eye, title: 'File Dicek', desc: ' Review ukuran & resolusi sebelum cetak.' },
+  { icon: Sparkles, title: 'Desain Ringan', desc: 'Bantu optimalkan kualitas gambar.' },
+]
+
+const AUDIENCE = [
+  { title: 'Vendor Sablon', desc: 'Partner print DTF untuk kebutuhan produksi harian.', emoji: '🖨️' },
+  { title: 'Konveksi Kecil', desc: 'Tambah layanan DTF tanpa investasi mesin.', emoji: '👔' },
+  { title: 'Reseller', desc: 'Kaos customready to sell.', emoji: '💼' },
+  { title: 'Brand Lokal', desc: 'Mini drop dengan fleksibilitas tinggi.', emoji: '🚀' },
+]
 
 const FAQ = [
   { q: 'Apakah layanan ini sudah termasuk kaos?', a: 'Belum. Kami hanya menyediakan jasa print DTF transfer siap press.' },
-  { q: 'Apakah sudah termasuk jasa press?', a: 'Belum. Transfer DTF dikirim dalam bentuk siap press. Layanan ini cocok untuk customer yang sudah punya heat press sendiri.' },
-  { q: 'Bisa order untuk vendor sablon atau konveksi?', a: 'Bisa. Kami melayani vendor sablon, konveksi kecil, reseller, dan brand lokal.' },
-  { q: 'Bisa bantu layout hemat area cetak?', a: 'Bisa, selama file sudah siap cetak. Jika file perlu edit berat, kami akan informasikan terlebih dahulu.' },
-  { q: 'Bisa bantu desain?', a: 'Bisa untuk desain ringan, optimasi kualitas gambar, desain logo sederhana, atau perapihan file dasar. Untuk desain kompleks akan dikonfirmasi terlebih dahulu.' },
-  { q: 'File dari Canva bisa dicetak?', a: 'Bisa dicek dulu. Pastikan file memiliki resolusi yang cukup dan background sesuai kebutuhan.' },
-  { q: 'Bisa kirim luar kota?', a: 'Bisa. Transfer DTF bisa dikirim sesuai alamat tujuan via ekspedisi.' },
-  { q: 'Bisa ambil langsung?', a: 'Bisa. Anda dapat mengambil hasil print langsung di workshop cetakin.com.' },
-  { q: 'Kalau hasil press gagal, apakah diganti?', a: 'Kami bertanggung jawab jika terdapat cacat produksi pada hasil print. Namun proses press, suhu, tekanan, bahan kain, dan teknik aplikasi berada di luar kendali kami.' },
-  { q: 'Bisa dapat harga vendor?', a: 'Bisa. Harga vendor tersedia untuk repeat order atau pembelian dengan jumlah tertentu.' },
+  { q: 'Apakah sudah termasuk jasa press?', a: 'Belum. Transfer DTF dikirim dalam bentuk siap press.' },
+  { q: 'Bisa order untuk vendor sablon?', a: 'Bisa. Kami melayani vendor, konveksi, reseller, dan brand.' },
+  { q: 'Bisa bantu layout hemat area?', a: 'Bisa, selama file sudah siap cetak.' },
+  { q: 'Bisa bantu desain?', a: 'Bisa untuk desain ringan dan optimasi.' },
 ]
-
-const CLOSING = {
-  headline: 'Siap Print DTF untuk Kebutuhan Produksi Anda?',
-  body: 'Kirim file desain Anda sekarang. cetakin.com bantu cek file, hitungkan kebutuhan cetak, dan siapkan transfer DTF siap press untuk kebutuhan produksi Anda.',
-  cta: 'Order Cepat',
-  ctaSecondary: 'Cek File & Harga via WhatsApp',
-}
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState<number | null>(null)
+
+  const { data: content, isLoading: contentLoading } = useQuery({
+    queryKey: ['landing-content'],
+    queryFn: getLandingPageContent,
+  })
+
+  const { data: companySettings } = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: () => getSetting<{
+      name: string
+      companyName: string
+      whatsapp: string
+      address: string
+    }>('company'),
+  })
+
+  const company = companySettings?.data || COMPANY
+  const faqs = content?.faqs || FAQ
 
   const openWhatsApp = (message?: string) => {
     const defaultMsg = `Halo, saya ingin print DTF transfer siap press.
@@ -167,289 +96,370 @@ export default function LandingPage() {
 Kebutuhan saya:
 - Jenis order: 
 - Ukuran desain:
-- Jumlah atau estimasi panjang:
-- Deadline:
-- Kota pengiriman:
-- File desain: akan saya kirim
+- Jumlah:
 
 Mohon dibantu cek file dan estimasi harganya.`
     const msg = message || defaultMsg
-    const waUrl = `https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`
+    const waUrl = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(msg)}`
     window.open(waUrl, '_blank')
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-surface border-b border-border">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* ═══════════════════════════════════════════════════════════════
+          HEADER - Glassmorphism
+      ═══════════════════════════════════════════════════════════════ */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="text-xl font-bold text-primary">
-              {COMPANY.name}
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Printer className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-xl font-bold gradient-text">{COMPANY.name}</span>
             </Link>
             
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/#services" className="text-sm text-muted-foreground hover:text-foreground">Layanan</Link>
-              <Link to="/#cara-order" className="text-sm text-muted-foreground hover:text-foreground">Cara Order</Link>
-              <Link to="/#faq" className="text-sm text-muted-foreground hover:text-foreground">FAQ</Link>
+            <nav className="hidden md:flex items-center gap-8">
+              <Link to="#samples" className="text-sm text-text-secondary hover:text-foreground transition-colors">Sample</Link>
+              <Link to="#process" className="text-sm text-text-secondary hover:text-foreground transition-colors">Cara Kerja</Link>
+              <Link to="#faq" className="text-sm text-text-secondary hover:text-foreground transition-colors">FAQ</Link>
               <Button variant="whatsapp" size="sm" onClick={() => openWhatsApp()}>
                 <MessageCircle className="w-4 h-4" />
                 WhatsApp
               </Button>
             </nav>
 
-            <button 
-              className="md:hidden" 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
+            <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
 
           {mobileMenuOpen && (
-            <nav className="md:hidden mt-4 flex flex-col gap-4">
-              <Link to="/#services" className="text-sm text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>Layanan</Link>
-              <Link to="/#cara-order" className="text-sm text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>Cara Order</Link>
-              <Link to="/#faq" className="text-sm text-muted-foreground" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
-              <Button variant="whatsapp" size="sm" onClick={() => openWhatsApp()}>
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </Button>
+            <nav className="md:hidden mt-4 flex flex-col gap-4 pb-4">
+              <Link to="#samples" onClick={() => setMobileMenuOpen(false)}>Sample</Link>
+              <Link to="#process" onClick={() => setMobileMenuOpen(false)}>Cara Kerja</Link>
+              <Link to="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
+              <Button variant="whatsapp" size="sm" onClick={() => openWhatsApp()}>WhatsApp</Button>
             </nav>
           )}
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="py-12 md:py-20 bg-surface">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              {HERO.headline}
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-6">
-              {HERO.subheadline}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/order">
-                <Button variant="accent" size="lg">
-                  <ArrowRight className="w-5 h-5" />
-                  {HERO.ctaPrimary}
+      {/* ═══════════════════════════════════════════════════════════════
+          HERO SECTION - Visual & Glow
+      ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative min-h-screen flex items-center bg-mesh-dark bg-grid-dark pt-24 pb-16 overflow-hidden">
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute bottom-20 right-10 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
+        
+        <div className="container mx-auto px-4 relative">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Text */}
+            <div className="space-y-6 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-1.5 text-sm">
+                <Zap className="w-4 h-4 text-accent" />
+                <span className="text-text-secondary">Print DTF Transfer Siap Press</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                <span className="gradient-text">{HERO.headline}</span>
+              </h1>
+              
+              <p className="text-lg text-text-secondary max-w-xl">
+                {HERO.subheadline}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/order">
+                  <Button variant="glow" size="lg" className="group">
+                    {HERO.ctaPrimary}
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Button variant="whatsapp" size="lg" onClick={() => openWhatsApp()}>
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  {HERO.ctaSecondary}
                 </Button>
-              </Link>
-              <Button variant="whatsapp" size="lg" onClick={() => openWhatsApp()}>
-                <MessageCircle className="w-5 h-5" />
-                {HERO.ctaSecondary}
-              </Button>
-            </div>
-            <p className="text-sm text-muted mt-4">{HERO.note}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">{PROBLEM.title}</h2>
-            <div className="prose prose-gray max-w-none text-center text-muted-foreground mb-6">
-              {PROBLEM.body.split('\n\n').map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-            <div className="text-center">
-              <Button variant="outline" onClick={() => openWhatsApp()}>
-                {PROBLEM.cta}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Solution */}
-      <section className="py-12 md:py-16 bg-surface">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">{SOLUTION.title}</h2>
-            <p className="text-center text-muted-foreground mb-8">{SOLUTION.body}</p>
-            <ul className="space-y-3">
-              {SOLUTION.benefits.map((benefit, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">{benefit}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* Target Audience */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{AUDIENCE.title}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {AUDIENCE.cards.map((card, i) => (
-              <div key={i} className="bg-surface rounded-lg p-6 border border-border">
-                <h3 className="font-semibold mb-2">{card.title}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{card.description}</p>
-                <p className="text-sm font-medium text-primary">{card.message}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Value Proposition */}
-      <section className="py-12 md:py-16 bg-surface">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">{VALUE.title}</h2>
-          <p className="text-center text-muted-foreground mb-8">{VALUE.body}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {VALUE.cards.map((card, i) => (
-              <div key={i} className="bg-background rounded-lg p-6 border border-border">
-                <CheckCircle2 className="w-6 h-6 text-primary mb-3" />
-                <h3 className="font-semibold mb-2">{card.title}</h3>
-                <p className="text-sm text-muted-foreground">{card.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Services */}
-      <section id="services" className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{SERVICES.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {SERVICES.items.map((service, i) => (
-              <div key={i} className="bg-surface rounded-lg p-6 border border-border">
-                <h3 className="font-semibold mb-2">{service.title}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{service.description}</p>
-                <p className="text-sm text-muted"><span className="font-medium">Cocok untuk:</span> {service.cocok}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Cara Order */}
-      <section id="cara-order" className="py-12 md:py-16 bg-surface">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Cara Order</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ORDER_STEPS.map((step, i) => (
-              <div key={i} className="bg-background rounded-lg p-6 border border-border">
-                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mb-3">
-                  {i + 1}
-                </div>
-                <h3 className="font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Syarat File */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{SYARAT_FILE.title}</h2>
-          <div className="max-w-2xl mx-auto">
-            <ul className="space-y-3 mb-6">
-              {SYARAT_FILE.items.map((item, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                  <span className="text-muted-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="text-center">
-              <Button variant="outline" onClick={() => openWhatsApp()}>
-                {SYARAT_FILE.cta}
-              </Button>
+              
+              <p className="text-sm text-text-muted">{HERO.note}</p>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Disclaimer */}
-      <section className="py-12 md:py-16 bg-surface">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">{DISCLAIMER.title}</h2>
-          <div className="max-w-2xl mx-auto prose prose-gray text-center text-muted-foreground">
-            {DISCLAIMER.body.split('\n\n').map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">FAQ</h2>
-          <div className="max-w-2xl mx-auto space-y-4">
-            {FAQ.map((item, i) => (
-              <div key={i} className="border border-border rounded-lg overflow-hidden">
-                <button
-                  className="w-full flex items-center justify-between p-4 text-left bg-surface hover:bg-surface/80"
-                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                >
-                  <span className="font-medium">{item.q}</span>
-                  <HelpCircle className={`w-5 h-5 flex-shrink-0 transition-transform ${faqOpen === i ? 'rotate-180' : ''}`} />
-                </button>
-                {faqOpen === i && (
-                  <div className="p-4 pt-0 text-muted-foreground">
-                    {item.a}
+            {/* Right - Visual Showcase */}
+            <div className="relative animate-scale-in-glow">
+              <div className="grid grid-cols-2 gap-4">
+                {PRINTING_SAMPLES.map((sample, idx) => (
+                  <div 
+                    key={idx}
+                    className="glass-card rounded-2xl p-8 text-center hover:scale-105 transition-transform cursor-pointer"
+                  >
+                    <span className="text-5xl block mb-3">{sample.image}</span>
+                    <h3 className="font-semibold text-lg mb-1">{sample.title}</h3>
+                    <p className="text-sm text-text-muted">{sample.desc}</p>
                   </div>
-                )}
+                ))}
               </div>
+              
+              {/* Floating badge */}
+              <div className="absolute -top-4 -right-4 glass rounded-xl px-4 py-2 animate-float">
+                <span className="text-sm font-medium">🔥 Ready to Press</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          BENEFITS - Visual Cards
+      ═══════════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-surface">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Keunggulan Cetakin.com</h2>
+            <p className="text-text-secondary max-w-xl mx-auto">Partner print DTF yang praktis untuk kebutuhan produksi Anda.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {BENEFITS_VISUAL.map((item, idx) => (
+              <Card key={idx} className="group hover:border-primary/50 transition-all duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <item.icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-text-muted">{item.desc}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Closing CTA */}
-      <section className="py-12 md:py-16 bg-primary text-white">
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SAMPLES GALLERY - Visual Grid
+      ══════════════════════════════════════════════════���════════════ */}
+      <section id="samples" className="py-20 bg-mesh-dark">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">{CLOSING.headline}</h2>
-            <p className="text-white/80 mb-6">{CLOSING.body}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/order">
-                <Button variant="accent" size="lg">
-                  <ArrowRight className="w-5 h-5" />
-                  {CLOSING.cta}
-                </Button>
-              </Link>
-              <Button variant="whatsapp" size="lg" onClick={() => openWhatsApp()}>
-                <MessageCircle className="w-5 h-5" />
-                {CLOSING.ctaSecondary}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Sample Hasil Cetak</h2>
+            <p className="text-text-secondary">Kualitas print DTF transfer siap press dari cetakin.com</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {GALLERY_IMAGES.map((img) => (
+              <div 
+                key={img.id}
+                className="group relative aspect-square glass-card rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-all"
+              >
+                {/* Placeholder visual - in production, this would be real image */}
+                <div className="absolute inset-0 flex items-center justify-center bg-surface-elevated">
+                  <span className="text-6xl group-hover:scale-110 transition-transform">{img.emoji}</span>
+                </div>
+                
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                  <div>
+                    <h3 className="font-semibold">{img.label}</h3>
+                    <p className="text-sm text-text-muted">{img.desc}</p>
+                  </div>
+                </div>
+                
+                {/* Glow effect on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="absolute inset-0 shadow-glow-blue rounded-2xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-10">
+            <Link to="/order">
+              <Button variant="outline" size="lg">
+                <GalleryVertical className="w-5 h-5 mr-2" />
+                Lihat Semua Sample
               </Button>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-surface-dark text-white">
+      {/* ═══════════════════════════════════════════════════════════════
+          PROCESS - Step by Step Visual
+      ═══════════════════════════════════════════════════════════════ */}
+      <section id="process" className="py-20 bg-surface">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-center md:text-left">
-              <p className="font-semibold">{COMPANY.name}</p>
-              <p className="text-sm text-white/60">{COMPANY.companyName}</p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Cara Order</h2>
+            <p className="text-text-secondary">5 langkah mudah</p>
+          </div>
+          
+          <div className="grid md:grid-cols-5 gap-4">
+            {PROCESS_STEPS.map((step, idx) => {
+              const Icon = step.icon
+              return (
+                <div key={idx} className="relative">
+                  <Card className="h-full text-center hover:border-primary/50 transition-all group">
+                    <CardContent className="p-6">
+                      <div className="text-5xl font-bold text-text-subtle/30 mb-4">{step.num}</div>
+                      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <Icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <h3 className="font-semibold mb-2">{step.title}</h3>
+                      <p className="text-sm text-text-muted">{step.desc}</p>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Connector line */}
+                  {PROCESS_STEPS.length - 1 && (
+                    <div className="hidden md:block absolute top-1/2 -right-2 transform -translate-y-1/2 z-10">
+                      <ArrowRight className="w-5 h-5 text-text-subtle/30" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          TARGET AUDIENCE - Visual Cards
+      ═══════════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-mesh-primary">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Layanan Ini Cocok untuk Siapa?</h2>
+            <p className="text-text-secondary">Siap membantu berbagai kebutuhan printing Anda</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {AUDIENCE.map((item, idx) => (
+              <Card key={idx} className="group hover:border-accent/50 transition-all">
+                <CardContent className="p-6 text-center">
+                  <span className="text-5xl block mb-4 group-hover:scale-110 transition-transform">{item.emoji}</span>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-text-muted">{item.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          CTA SECTION - Glow
+      ═══════════════════════════════════════════════════════════════ */}
+      <section className="py-20 bg-glow-spot relative overflow-hidden">
+        <div className="absolute inset-0 bg-mesh-accent opacity-30" />
+        
+        <div className="container mx-auto px-4 relative text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Siap Print DTF untuk Kebutuhan Anda?</h2>
+          <p className="text-white/80 mb-8 max-w-xl mx-auto">Kirim file desain Anda sekarang. cetakin.com bantu cek file, hitungkan kebutuhan, dan siapkan transfer DTF siap press.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/order">
+              <Button variant="accent" size="lg">
+                {HERO.ctaPrimary}
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Button variant="whatsapp" size="lg" onClick={() => openWhatsApp()}>
+              <MessageCircle className="w-5 h-5 mr-2" />
+              {HERO.ctaSecondary}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          FAQ - Accordion
+      ════════��═��════════════════════════════════════════════════════ */}
+      <section id="faq" className="py-20 bg-surface">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">FAQ</h2>
+            <p className="text-text-secondary">Pertanyaan yang sering diajukan</p>
+          </div>
+          
+          <div className="max-w-2xl mx-auto space-y-3">
+            {contentLoading ? (
+              <div className="py-8 flex justify-center">
+                <LoadingSpinner text="Memuat FAQ..." />
+              </div>
+            ) : (
+              faqs.map((item: { question: string; answer: string }, idx: number) => (
+                <div key={idx} className="border border-border rounded-xl overflow-hidden">
+                  <button
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-elevated transition-colors"
+                    onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                  >
+                    <span className="font-medium pr-4">{item.question}</span>
+                    <HelpCircle className={`w-5 h-5 flex-shrink-0 transition-transform ${faqOpen === idx ? 'rotate-180' : ''}`} />
+                  </button>
+                  {faqOpen === idx && (
+                    <div className="px-4 pb-4 text-text-muted" dangerouslySetInnerHTML={{ __html: item.answer }} />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          FOOTER
+      ═══════════════════════════════════════════════════════════════ */}
+      <footer className="py-12 bg-surface-dark">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Printer className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-bold text-lg">{COMPANY.name}</span>
+              </div>
+              <p className="text-sm text-text-muted mb-4">{COMPANY.companyName}</p>
+              <div className="flex items-start gap-3 text-sm text-text-muted">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>{COMPANY.address}</p>
+              </div>
             </div>
-            <div className="text-center md:text-right text-sm text-white/60">
-              <p>{COMPANY.address}</p>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Kontak</h3>
+              <div className="space-y-3 text-sm text-text-muted">
+                <a href={`https://wa.me/${COMPANY.whatsapp}`} className="flex items-center gap-3 hover:text-foreground transition-colors">
+                  <Phone className="w-4 h-4" />
+                  +62 821 1313 3165
+                </a>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4" />
+                  Jam operasional: 08.00 - 17.00 WIB
+                </div>
+              </div>
             </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Link</h3>
+              <div className="space-y-2 text-sm text-text-muted">
+                <Link to="/order" className="block hover:text-foreground transition-colors">Order Cepat</Link>
+                <Link to="/login" className="block hover:text-foreground transition-colors">Login Member</Link>
+                <Link to="/admin" className="block hover:text-foreground transition-colors">Admin</Link>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-border mt-8 pt-8 text-center text-sm text-text-muted">
+            &copy; {new Date().getFullYear()} {COMPANY.name}. All rights reserved.
           </div>
         </div>
       </footer>
 
-      {/* Sticky WhatsApp */}
-      <div className="fixed bottom-4 right-4 z-50 md:hidden">
-        <Button variant="whatsapp" size="lg" className="rounded-full shadow-lg" onClick={() => openWhatsApp()}>
+      {/* Floating WhatsApp - Mobile */}
+      <div className="fixed bottom-6 right-6 z-50 md:hidden">
+        <Button variant="whatsapp" size="lg" className="rounded-full shadow-lg hover:scale-110 transition-transform" onClick={() => openWhatsApp()}>
           <MessageCircle className="w-6 h-6" />
         </Button>
       </div>

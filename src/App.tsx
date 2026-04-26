@@ -1,4 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './lib/AuthContext'
+import { PageLoader } from './components/ui/loading'
+import ProtectedRoute from './components/ProtectedRoute'
+import DashboardLayout from './components/DashboardLayout'
 import LandingPage from './pages/public/LandingPage'
 import OrderPage from './pages/public/OrderPage'
 import OrderSuccessPage from './pages/public/OrderSuccessPage'
@@ -22,7 +26,53 @@ import MemberOrderDetail from './pages/member/OrderDetail'
 import MemberInvoices from './pages/member/Invoices'
 import MemberInvoiceDetail from './pages/member/InvoiceDetail'
 
+function AdminRoutes() {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+      <DashboardLayout variant="admin">
+        <Routes>
+          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/orders" element={<AdminOrders />} />
+          <Route path="/orders/:id" element={<AdminOrderDetail />} />
+          <Route path="/members" element={<AdminMembers />} />
+          <Route path="/invoices" element={<AdminInvoices />} />
+          <Route path="/files" element={<AdminFiles />} />
+          <Route path="/media" element={<AdminMedia />} />
+          <Route path="/price-list" element={<AdminPriceList />} />
+          <Route path="/content" element={<AdminContent />} />
+          <Route path="/seo-tracking" element={<AdminSeoTracking />} />
+          <Route path="/whatsapp" element={<AdminWhatsApp />} />
+          <Route path="/company" element={<AdminCompany />} />
+          <Route path="/settings" element={<AdminSettings />} />
+        </Routes>
+      </DashboardLayout>
+    </ProtectedRoute>
+  )
+}
+
+function MemberRoutes() {
+  return (
+    <ProtectedRoute allowedRoles={['member', 'admin', 'super_admin']}>
+      <DashboardLayout variant="member">
+        <Routes>
+          <Route path="/" element={<MemberDashboard />} />
+          <Route path="/orders" element={<MemberOrders />} />
+          <Route path="/orders/:id" element={<MemberOrderDetail />} />
+          <Route path="/invoices" element={<MemberInvoices />} />
+          <Route path="/invoices/:id" element={<MemberInvoiceDetail />} />
+        </Routes>
+      </DashboardLayout>
+    </ProtectedRoute>
+  )
+}
+
 function App() {
+  const { isLoading } = useAuth()
+
+  if (isLoading) {
+    return <PageLoader />
+  }
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -30,25 +80,8 @@ function App() {
       <Route path="/order/success/:orderNumber" element={<OrderSuccessPage />} />
       <Route path="/login" element={<LoginPage />} />
       
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/orders" element={<AdminOrders />} />
-      <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
-      <Route path="/admin/members" element={<AdminMembers />} />
-      <Route path="/admin/invoices" element={<AdminInvoices />} />
-      <Route path="/admin/files" element={<AdminFiles />} />
-      <Route path="/admin/media" element={<AdminMedia />} />
-      <Route path="/admin/price-list" element={<AdminPriceList />} />
-      <Route path="/admin/content" element={<AdminContent />} />
-      <Route path="/admin/seo-tracking" element={<AdminSeoTracking />} />
-      <Route path="/admin/whatsapp" element={<AdminWhatsApp />} />
-      <Route path="/admin/company" element={<AdminCompany />} />
-      <Route path="/admin/settings" element={<AdminSettings />} />
-      
-      <Route path="/member" element={<MemberDashboard />} />
-      <Route path="/member/orders" element={<MemberOrders />} />
-      <Route path="/member/orders/:id" element={<MemberOrderDetail />} />
-      <Route path="/member/invoices" element={<MemberInvoices />} />
-      <Route path="/member/invoices/:id" element={<MemberInvoiceDetail />} />
+      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="/member/*" element={<MemberRoutes />} />
       
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

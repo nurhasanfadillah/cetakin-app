@@ -3,12 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Phone, Lock, Loader2, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Loader2, ArrowLeft, Eye, EyeOff, Printer, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/AuthContext'
 
 const loginSchema = z.object({
-  phone: z.string().min(10, 'Nomor HP minimal 10 digit'),
+  email: z.string().email('Email tidak valid'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
 })
 
@@ -17,8 +17,10 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { signIn, isAdmin } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const from = (location.state as { from?: string })?.from || '/member'
 
@@ -35,23 +37,14 @@ export default function LoginPage() {
       setLoading(true)
       setError('')
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('phone', data.phone)
-        .single()
+      const { error: signInError } = await signIn(data.email, data.password)
 
-      if (profileError || !profile) {
-        setError('Nomor HP tidak terdaftar')
+      if (signInError) {
+        setError('Email atau password salah')
         return
       }
 
-      if (!profile.is_active) {
-        setError('Akun tidak aktif. Hubungi admin.')
-        return
-      }
-
-      if (profile.role === 'admin' || profile.role === 'super_admin') {
+      if (isAdmin) {
         navigate('/admin')
       } else {
         navigate(from)
@@ -66,43 +59,60 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="container mx-auto px-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+      
+      <div className="container mx-auto px-4 relative">
         <div className="max-w-md mx-auto">
-          <Button variant="ghost" className="mb-4" onClick={() => navigate('/')}>
-            <ArrowLeft className="w-4 h-4" />
+          <Button variant="ghost" className="mb-6" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Kembali
           </Button>
 
-          <div className="bg-surface rounded-lg border border-border p-6">
-            <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
+          <div className="bg-surface rounded-2xl border border-border p-8">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <Printer className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold">Login</h1>
+              <p className="text-text-secondary mt-2">Masuk ke akun cetakin.com</p>
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Nomor HP</label>
+                <label className="block text-sm font-medium mb-1.5">Email</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <input
-                    {...register('phone')}
-                    type="tel"
-                    className="w-full pl-10 px-3 py-2 border border-input rounded-md bg-background"
-                    placeholder="08xxxxxxxxxx"
+                    {...register('email')}
+                    type="email"
+                    className="w-full pl-12 px-4 py-3 border border-border rounded-xl bg-background text-text-primary focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    placeholder="nama@email.com"
                   />
                 </div>
-                {errors.phone && (
-                  <p className="text-sm text-danger mt-1">{errors.phone.message}</p>
+                {errors.email && (
+                  <p className="text-sm text-danger mt-1">{errors.email.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
+                <label className="block text-sm font-medium mb-1.5">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <input
                     {...register('password')}
-                    type="password"
-                    className="w-full pl-10 px-3 py-2 border border-input rounded-md bg-background"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full pl-12 pr-12 px-4 py-3 border border-border rounded-xl bg-background text-text-primary focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                     placeholder="Password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-sm text-danger mt-1">{errors.password.message}</p>
@@ -110,23 +120,33 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-danger/10 border border-danger/20 rounded-md text-danger text-sm">
+                <div className="p-4 bg-danger/10 border border-danger/20 rounded-xl text-danger text-sm flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   {error}
                 </div>
               )}
 
-              <Button type="submit" variant="accent" className="w-full" disabled={loading}>
+              <Button type="submit" variant="accent" className="w-full" size="lg" disabled={loading}>
                 {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  'Login'
+                  'Masuk'
                 )}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-4">
+            <div className="mt-6 text-center">
+              <p className="text-sm text-text-muted">
+                Lupa password?{' '}
+                <Link to="/forgot-password" className="text-primary hover:underline font-medium">
+                  Reset password
+                </Link>
+              </p>
+            </div>
+
+            <p className="text-center text-sm text-text-muted mt-6">
               Belum punya akun?{' '}
-              <Link to="/order" className="text-primary hover:underline">
+              <Link to="/order" className="text-primary hover:underline font-medium">
                 Order dulu
               </Link>
               {' '}untuk buat akun otomatis

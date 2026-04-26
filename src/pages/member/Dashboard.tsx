@@ -5,7 +5,12 @@ import {
   FileText, 
   LogOut,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Printer,
+  Plus,
+  ChevronRight,
+  Truck,
+  MapPin
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, type BadgeVariant } from '@/components/ui/badge'
@@ -32,6 +37,7 @@ const sampleOrders = [
     order_number: 'ORD-2604-ABC123',
     service_type: 'Print DTF Meteran',
     status: 'MENUNGGU_REVIEW_FILE',
+    pickup_method: 'pickup',
     created_at: '2026-04-26T10:00:00Z',
     total_amount: 150000,
   },
@@ -40,8 +46,18 @@ const sampleOrders = [
     order_number: 'ORD-2603-DEF456',
     service_type: 'Print Banyak Desain',
     status: 'SELESAI',
+    pickup_method: 'shipping',
     created_at: '2026-04-23T14:30:00Z',
     total_amount: 275000,
+  },
+  {
+    id: '3',
+    order_number: 'ORD-2603-GHI789',
+    service_type: 'Maklon Vendor',
+    status: 'MASUK_PRODUKSI',
+    pickup_method: 'pickup',
+    created_at: '2026-04-22T09:15:00Z',
+    total_amount: 425000,
   },
 ]
 
@@ -55,23 +71,46 @@ const formatDate = (dateStr: string) => {
 
 export default function Dashboard() {
   const stats = [
-    { label: 'Total Order', value: sampleOrders.length, icon: ShoppingCart },
-    { label: 'Menunggu', value: sampleOrders.filter(o => ['MENUNGGU_REVIEW_FILE', 'MENUNGGU_APPROVAL_HARGA', 'MENUNGGU_PEMBAYARAN'].includes(o.status)).length, icon: Clock },
-    { label: 'Selesai', value: sampleOrders.filter(o => o.status === 'SELESAI').length, icon: CheckCircle },
+    { 
+      label: 'Total Order', 
+      value: sampleOrders.length, 
+      icon: ShoppingCart,
+      color: 'text-primary',
+      bg: 'bg-primary/10'
+    },
+    { 
+      label: 'Sedang Diproses', 
+      value: sampleOrders.filter(o => ['MENUNGGU_REVIEW_FILE', 'MENUNGGU_APPROVAL_HARGA', 'MENUNGGU_PEMBAYARAN', 'MASUK_PRODUKSI'].includes(o.status)).length, 
+      icon: Clock,
+      color: 'text-warning',
+      bg: 'bg-warning/10'
+    },
+    { 
+      label: 'Selesai', 
+      value: sampleOrders.filter(o => o.status === 'SELESAI').length, 
+      icon: CheckCircle,
+      color: 'text-success',
+      bg: 'bg-success/10'
+    },
   ]
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-surface border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="text-xl font-bold text-primary">cetakin.com</Link>
-              <span className="text-sm text-muted-foreground">Member Area</span>
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Printer className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xl font-bold">cetakin.com</span>
+              </Link>
+              <span className="hidden md:inline text-sm text-muted-foreground px-2 py-1 bg-surface rounded-md">Member Area</span>
             </div>
             <Button variant="ghost" size="sm">
-              <LogOut className="w-4 h-4" />
-              Logout
+              <LogOut className="w-4 h-4 mr-1" />
+              <span className="hidden md:inline">Logout</span>
             </Button>
           </div>
         </div>
@@ -80,20 +119,22 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row gap-6">
           <aside className="md:w-56 flex-shrink-0">
-            <nav className="space-y-1">
-              <Link to="/member" className="flex items-center gap-3 px-3 py-2 text-sm rounded-md bg-accent">
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Link>
-              <Link to="/member/orders" className="flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-accent">
-                <ShoppingCart className="w-4 h-4" />
-                Pesanan Saya
-              </Link>
-              <Link to="/member/invoices" className="flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-accent">
-                <FileText className="w-4 h-4" />
-                Invoice
-              </Link>
-            </nav>
+            <div className="bg-surface rounded-xl border border-border p-4 sticky top-24">
+              <nav className="space-y-1">
+                <Link to="/member" className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg bg-primary/10 text-primary">
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+                <Link to="/member/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
+                  <ShoppingCart className="w-4 h-4" />
+                  Pesanan Saya
+                </Link>
+                <Link to="/member/invoices" className="flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
+                  <FileText className="w-4 h-4" />
+                  Invoice
+                </Link>
+              </nav>
+            </div>
           </aside>
 
           <main className="flex-1 space-y-6">
@@ -102,83 +143,95 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Berikut ringkasan pesanan Anda.</p>
             </div>
 
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
               {stats.map((stat, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <stat.icon className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </div>
+                <div 
+                  key={i}
+                  className="bg-surface rounded-xl border border-border p-4 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
+            {/* CTA */}
+            <div className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold mb-2">Mau Order Lagi?</h2>
+                  <p className="text-white/80">Siap membantu kebutuhan printing Anda.</p>
+                </div>
+                <Link to="/order">
+                  <Button variant="accent" size="lg" className="group">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Order Baru
+                    <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Orders */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Pesanan Terbaru</CardTitle>
                   <Link to="/member/orders">
-                    <Button variant="ghost" size="sm">Lihat Semua</Button>
+                    <Button variant="ghost" size="sm">
+                      Lihat Semua
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
                   </Link>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-2 text-sm font-medium">Order</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium">Layanan</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium">Status</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium">Total</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium">Tanggal</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sampleOrders.map((order) => (
-                        <tr key={order.id} className="border-b hover:bg-accent/50">
-                          <td className="py-3 px-2">
-                            <span className="font-mono text-sm">{order.order_number}</span>
-                          </td>
-                          <td className="py-3 px-2 text-sm">{order.service_type}</td>
-                          <td className="py-3 px-2">
-                            <Badge variant={statusConfig[order.status]?.variant || 'secondary'}>
-                              {statusConfig[order.status]?.label || order.status}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-2 text-sm font-medium">
-                            {formatCurrency(order.total_amount)}
-                          </td>
-                          <td className="py-3 px-2 text-sm text-muted-foreground">
-                            {formatDate(order.created_at)}
-                          </td>
-                          <td className="py-3 px-2">
-                            <Link to={`/member/orders/${order.id}`}>
-                              <Button variant="ghost" size="sm">Detail</Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-3">
+                  {sampleOrders.map((order) => (
+                    <div 
+                      key={order.id}
+                      className="flex items-center justify-between p-4 bg-background rounded-xl border border-border hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          {order.pickup_method === 'pickup' ? (
+                            <MapPin className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Truck className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-mono font-medium">{order.order_number}</p>
+                          <p className="text-sm text-muted-foreground">{order.service_type}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Badge variant={statusConfig[order.status]?.variant || 'secondary'}>
+                          {statusConfig[order.status]?.label || order.status}
+                        </Badge>
+                        <div className="text-right hidden md:block">
+                          <p className="font-medium">{formatCurrency(order.total_amount)}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
+                        </div>
+                        <Link to={`/member/orders/${order.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-
-            <div className="flex gap-4">
-              <Link to="/order">
-                <Button variant="accent">
-                  <ShoppingCart className="w-4 h-4" />
-                  Order Baru
-                </Button>
-              </Link>
-            </div>
           </main>
         </div>
       </div>
