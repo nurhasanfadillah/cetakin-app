@@ -37,7 +37,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ variant, children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { profile, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   
@@ -131,7 +131,7 @@ export default function DashboardLayout({ variant, children }: DashboardLayoutPr
             </button>
             <div>
               <h1 className="font-semibold text-text-primary capitalize">{variant} Dashboard</h1>
-              <p className="text-sm text-text-muted">{profile?.full_name || 'User'}</p>
+              <p className="text-sm text-text-muted">{user?.full_name || 'User'}</p>
             </div>
           </div>
           

@@ -3,12 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, Loader2, ArrowLeft, Eye, EyeOff, Printer, AlertCircle } from 'lucide-react'
+import { Phone, Lock, Loader2, ArrowLeft, Eye, EyeOff, Printer, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/AuthContext'
 
 const loginSchema = z.object({
-  email: z.string().email('Email tidak valid'),
+  phone: z.string().min(10, 'Nomor HP minimal 10 digit').max(15, 'Nomor HP maksimal 15 digit'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
 })
 
@@ -37,10 +37,10 @@ export default function LoginPage() {
       setLoading(true)
       setError('')
 
-      const { error: signInError } = await signIn(data.email, data.password)
+      const result = await signIn(data.phone, data.password)
 
-      if (signInError) {
-        setError('Email atau password salah')
+      if (result.error) {
+        setError(result.error)
         return
       }
 
@@ -81,18 +81,18 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
+                <label className="block text-sm font-medium mb-1.5">Nomor HP</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <input
-                    {...register('email')}
-                    type="email"
+                    {...register('phone')}
+                    type="tel"
                     className="w-full pl-12 px-4 py-3 border border-border rounded-xl bg-background text-text-primary focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                    placeholder="nama@email.com"
+                    placeholder="08xxxxxxxxxx"
                   />
                 </div>
-                {errors.email && (
-                  <p className="text-sm text-danger mt-1">{errors.email.message}</p>
+                {errors.phone && (
+                  <p className="text-sm text-danger mt-1">{errors.phone.message}</p>
                 )}
               </div>
 
@@ -137,10 +137,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-text-muted">
-                Lupa password?{' '}
-                <Link to="/forgot-password" className="text-primary hover:underline font-medium">
-                  Reset password
-                </Link>
+                Lupa password? Hubungi admin untuk reset.
               </p>
             </div>
 

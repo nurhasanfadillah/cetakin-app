@@ -1,159 +1,199 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import type { Profile } from '../types'
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
-  profile: Profile | null
+  user: Profile | null
   isLoading: boolean
   isAdmin: boolean
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
-  signUp: (data: SignUpData) => Promise<{ error: Error | null }>
+  isAuthenticated: boolean
+  signIn: (phone: string, password: string) => Promise<{ error: string | null }>
+  signUp: (data: SignUpData) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
-  resetPassword: (email: string) => Promise<{ error: Error | null }>
-  updateProfile: (data: Partial<Profile>) => Promise<{ error: Error | null }>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
+  resetPassword: (phone: string, newPassword: string) => Promise<{ error: string | null }>
 }
 
 interface SignUpData {
-  email: string
-  password: string
   fullName: string
   phone: string
+  email?: string
+  password: string
 }
+
+const SESSION_KEY = 'cetakin_session'
+const SESSION_TIMEOUT = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function getStoredSession(): Profile | null {
+  try {
+    const stored = localStorage.getItem(SESSION_KEY)
+    if (!stored) return null
+    
+    const { profile, expiry } = JSON.parse(stored)
+    
+    if (Date.now() > expiry) {
+      localStorage.removeItem(SESSION_KEY)
+      return null
+    }
+    
+    return profile
+  } catch {
+    localStorage.removeItem(SESSION_KEY)
+    return null
+  }
+}
+
+function setStoredSession(profile: Profile) {
+  const data = {
+    profile,
+    expiry: Date.now() + SESSION_TIMEOUT
+  }
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data))
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [user, setUser] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const fetchProfile = async (userId: string) => {
+  const signIn = async (phone: string, password: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('auth_user_id', userId)
-        .single()
+      setIsLoading(true)
+      
+      const { data, error } = await supabase.rpc('login_with_phone', {
+        phone: phone,
+        password: password
+      })
 
-      if (!error && data) {
-        setProfile(data as Profile)
+      if (error) {
+        return { error: error.message }
       }
-    } catch (err) {
-      console.error('Error fetching profile:', err)
-    }
-  }
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      return { error }
-    } catch (err) {
-      return { error: err as Error }
+      if (!data || data.length === 0) {
+        return { error: 'Login gagal' }
+      }
+
+      const profile = data[0] as Profile
+      setUser(profile)
+      setStoredSession(profile)
+      return { error: null }
+    } catch (err: unknown) {
+      const error = err as Error
+      return { error: error.message || 'Terjadi kesalahan' }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const signUp = async (data: SignUpData) => {
     try {
-      const { error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phone,
-            role: 'member'
-          }
-        }
+      setIsLoading(true)
+      
+      const { error } = await supabase.rpc('register_with_phone', {
+        p_full_name: data.fullName,
+        p_phone: data.phone,
+        p_email: data.email || null,
+        p_password: data.password
       })
-      return { error }
-    } catch (err) {
-      return { error: err as Error }
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    } catch (err: unknown) {
+      const error = err as Error
+      return { error: error.message || 'Terjadi kesalahan' }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    localStorage.removeItem(SESSION_KEY)
     setUser(null)
-    setSession(null)
-    setProfile(null)
   }
 
-  const resetPassword = async (email: string) => {
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+      if (!user) return { error: 'Tidak ada session' }
+
+      const { error: verifyError } = await supabase.rpc('login_with_phone', {
+        phone: user.phone,
+        password: currentPassword
       })
-      return { error }
-    } catch (err) {
-      return { error: err as Error }
+
+      if (verifyError) {
+        return { error: 'Password saat ini salah' }
+      }
+
+      const { error } = await supabase.rpc('update_profile_password', {
+        profile_id: user.id,
+        new_password: newPassword
+      })
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    } catch (err: unknown) {
+      const error = err as Error
+      return { error: error.message || 'Terjadi kesalahan' }
     }
   }
 
-  const updateProfile = async (data: Partial<Profile>) => {
+  const resetPassword = async (phone: string, newPassword: string) => {
     try {
-      if (!user) return { error: new Error('Not authenticated') }
-
-      const { error } = await supabase
+      const { data, error: findError } = await supabase
         .from('profiles')
-        .update(data)
-        .eq('auth_user_id', user.id)
+        .select('id')
+        .eq('phone', phone)
+        .single()
 
-      if (!error) {
-        setProfile(prev => prev ? { ...prev, ...data } : null)
+      if (findError || !data) {
+        return { error: 'Nomor HP tidak ditemukan' }
       }
 
-      return { error }
-    } catch (err) {
-      return { error: err as Error }
+      const { error } = await supabase.rpc('admin_reset_password', {
+        profile_id: data.id,
+        new_password: newPassword
+      })
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    } catch (err: unknown) {
+      const error = err as Error
+      return { error: error.message || 'Terjadi kesalahan' }
     }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      }
-      setIsLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
-        }
-        setIsLoading(false)
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    const stored = getStoredSession()
+    if (stored) {
+      setUser(stored)
+    }
+    setIsLoading(false)
   }, [])
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+  const isAuthenticated = !!user
 
   return (
     <AuthContext.Provider value={{
       user,
-      session,
-      profile,
       isLoading,
       isAdmin,
+      isAuthenticated,
       signIn,
       signUp,
       signOut,
-      resetPassword,
-      updateProfile
+      updatePassword,
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>
