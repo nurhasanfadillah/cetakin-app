@@ -125,15 +125,24 @@ export default function AdminOrderDetail() {
         updateData.total_amount = price + shipping - disc
       }
       
+      console.log('Updating order:', id, updateData)
+      
       const { error } = await supabase
         .from('orders')
         .update(updateData)
         .eq('id', id)
-      if (error) throw error
+      
+      if (error) {
+        console.error('Update price error:', error)
+        throw error
+      }
     },
     onSuccess: () => {
+      console.log('Price updated successfully')
       queryClient.invalidateQueries({ queryKey: ['admin-order', id] })
       setFinalPrice('')
+      setShippingCost('')
+      setDiscount('')
     },
   })
 
