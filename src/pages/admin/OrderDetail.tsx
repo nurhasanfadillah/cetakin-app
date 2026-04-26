@@ -237,6 +237,13 @@ Cetakin.com`
   useEffect(() => {
     if (order) {
       setInternalNotes(order.internal_notes || '')
+      if (order.final_price !== null && order.final_price !== undefined) {
+        setFinalPrice(order.final_price.toString())
+      } else if (order.estimated_price) {
+        setFinalPrice(order.estimated_price.toString())
+      }
+      setShippingCost((order.shipping_cost || 0).toString())
+      setDiscount((order.discount || 0).toString())
     }
   }, [order])
 
@@ -480,7 +487,7 @@ Cetakin.com`
                 <input
                   type="number"
                   placeholder={formatCurrency(order.final_price || order.estimated_price || 0)}
-                  defaultValue={order.final_price || order.estimated_price || ''}
+                  value={finalPrice}
                   onChange={(e) => setFinalPrice(e.target.value)}
                   className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
@@ -489,7 +496,7 @@ Cetakin.com`
                 <label className="text-sm text-text-muted">Ongkir (Rp)</label>
                 <input
                   type="number"
-                  defaultValue={order.shipping_cost || 0}
+                  value={shippingCost}
                   onChange={(e) => setShippingCost(e.target.value)}
                   className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
@@ -498,7 +505,7 @@ Cetakin.com`
                 <label className="text-sm text-text-muted">Diskon (Rp)</label>
                 <input
                   type="number"
-                  defaultValue={order.discount || 0}
+                  value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
                   className="w-full h-10 rounded-lg border border-border bg-background px-3 mt-1 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
