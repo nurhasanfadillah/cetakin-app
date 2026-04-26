@@ -67,13 +67,14 @@ export default function AdminOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
     customer_email: '',
     service_type: 'print_dtf_meteran',
     estimated_size: '',
-    pickup_method: 'pickup' as 'pickup' | 'shipping',
+    estimated_price: '',
+    pickup_method: 'pickup',
     shipping_address: '',
     shipping_city: '',
     customer_notes: '',
@@ -113,6 +114,7 @@ export default function AdminOrders() {
           customer_email: formData.customer_email || null,
           service_type: formData.service_type,
           estimated_size: formData.estimated_size || null,
+          estimated_price: formData.estimated_price ? parseInt(formData.estimated_price) : null,
           pickup_method: formData.pickup_method,
           shipping_address: formData.pickup_method === 'shipping' ? formData.shipping_address : null,
           shipping_city: formData.pickup_method === 'shipping' ? formData.shipping_city : null,
@@ -136,6 +138,7 @@ export default function AdminOrders() {
         customer_email: '',
         service_type: 'print_dtf_meteran',
         estimated_size: '',
+        estimated_price: '',
         pickup_method: 'pickup',
         shipping_address: '',
         shipping_city: '',
@@ -222,6 +225,16 @@ export default function AdminOrders() {
                   onChange={(e) => setFormData({ ...formData, estimated_size: e.target.value })}
                   className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                   placeholder="Contoh: 30cm x 40cm atau 1 meter"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Estimasi Harga (Rp)</label>
+                <input
+                  type="number"
+                  value={formData.estimated_price}
+                  onChange={(e) => setFormData({ ...formData, estimated_price: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Contoh: 150000"
                 />
               </div>
               <div>

@@ -76,6 +76,7 @@ export default function AdminDashboard() {
     customer_email: '',
     service_type: 'print_dtf_meteran',
     estimated_size: '',
+    estimated_price: '',
     pickup_method: 'pickup' as 'pickup' | 'shipping',
     shipping_address: '',
     shipping_city: '',
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
           customer_email: quickOrderData.customer_email || null,
           service_type: quickOrderData.service_type,
           estimated_size: quickOrderData.estimated_size || null,
+          estimated_price: quickOrderData.estimated_price ? parseInt(quickOrderData.estimated_price) : null,
           pickup_method: quickOrderData.pickup_method,
           shipping_address: quickOrderData.pickup_method === 'shipping' ? quickOrderData.shipping_address : null,
           shipping_city: quickOrderData.pickup_method === 'shipping' ? quickOrderData.shipping_city : null,
@@ -152,6 +154,7 @@ export default function AdminDashboard() {
         customer_email: '',
         service_type: 'print_dtf_meteran',
         estimated_size: '',
+        estimated_price: '',
         pickup_method: 'pickup',
         shipping_address: '',
         shipping_city: '',
@@ -241,6 +244,16 @@ export default function AdminDashboard() {
                   onChange={(e) => setQuickOrderData({ ...quickOrderData, estimated_size: e.target.value })}
                   className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                   placeholder="Contoh: 30cm x 40cm atau 1 meter"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Estimasi Harga (Rp)</label>
+                <input
+                  type="number"
+                  value={quickOrderData.estimated_price}
+                  onChange={(e) => setQuickOrderData({ ...quickOrderData, estimated_price: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Contoh: 150000"
                 />
               </div>
               <div>

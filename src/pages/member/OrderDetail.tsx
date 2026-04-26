@@ -44,10 +44,11 @@ export default function OrderDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*, invoice:invoices(*), payment:payments(*), files:order_files(*)')
+        .select('*, invoice:invoices(*), payment:payments(*), files:order_files(*), member:profiles(*)')
         .eq('id', id)
         .single()
       if (error) throw error
+      console.log('Order data:', data)
       return data as Order
     },
     enabled: !!id,
