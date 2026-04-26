@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   Search, 
   ChevronRight, 
@@ -9,12 +9,18 @@ import {
   Package,
   Phone,
   Mail,
+  Plus,
+  X,
+  Loader2,
+  MapPin,
+  Truck
 } from 'lucide-react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge, type BadgeVariant } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PaymentStatusBadge } from '@/components/PaymentStatus'
 import { getOrders } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import type { OrderStatus } from '@/types'
 
 const statusConfig: Record<OrderStatus, { label: string; variant: BadgeVariant }> = {
@@ -47,9 +53,31 @@ const formatDate = (dateStr: string) => {
   })
 }
 
+const SERVICE_OPTIONS = [
+  { value: 'print_dtf_meteran', label: 'Print DTF Meteran' },
+  { value: 'print_banyak_desain', label: 'Print Banyak Desain Sekaligus' },
+  { value: 'maklon_vendor', label: 'Maklon Print DTF Vendor' },
+  { value: 'bantuan_layout', label: 'Bantuan Layout Hemat Area Cetak' },
+  { value: 'bantu_desain', label: 'Bantu Desain Ringan' },
+]
+
 export default function AdminOrders() {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [formData, setFormData] = useState({
+    customer_name: '',
+    customer_phone: '',
+    customer_email: '',
+    service_type: 'print_dtf_meteran',
+    estimated_size: '',
+    pickup_method: 'pickup' as 'pickup' | 'shipping',
+    shipping_address: '',
+    shipping_city: '',
+    customer_notes: '',
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders', statusFilter],
@@ -68,6 +96,55 @@ export default function AdminOrders() {
     )
   })
 
+  const createOrderMutation = useMutation({
+    mutationFn: async () => {
+      const date = new Date()
+      const year = date.getFullYear().toString().slice(-2)
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+      const orderNumber = `ORD-${year}${month}-${random}`
+
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          order_number: orderNumber,
+          customer_name: formData.customer_name,
+          customer_phone: formData.customer_phone,
+          customer_email: formData.customer_email || null,
+          service_type: formData.service_type,
+          estimated_size: formData.estimated_size || null,
+          pickup_method: formData.pickup_method,
+          shipping_address: formData.pickup_method === 'shipping' ? formData.shipping_address : null,
+          shipping_city: formData.pickup_method === 'shipping' ? formData.shipping_city : null,
+          customer_notes: formData.customer_notes || null,
+          status: 'MENUNGGU_REVIEW_FILE',
+          payment_status: 'UNPAID',
+          discount: 0,
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      return order
+    },
+    onSuccess: (order) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] })
+      setShowCreateModal(false)
+      setFormData({
+        customer_name: '',
+        customer_phone: '',
+        customer_email: '',
+        service_type: 'print_dtf_meteran',
+        estimated_size: '',
+        pickup_method: 'pickup',
+        shipping_address: '',
+        shipping_city: '',
+        customer_notes: '',
+      })
+      navigate(`/admin/orders/${order.id}`)
+    },
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -77,8 +154,154 @@ export default function AdminOrders() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{orders.length} pesanan</Badge>
+          <Button variant="accent" size="sm" onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Order Baru
+          </Button>
         </div>
       </div>
+
+      {/* Create Order Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="text-lg">Order Baru</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Nama Customer *</label>
+                <input
+                  type="text"
+                  value={formData.customer_name}
+                  onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Nama lengkap"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">No. WhatsApp *</label>
+                <input
+                  type="text"
+                  value={formData.customer_phone}
+                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="08xxxxxxxxxx"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={formData.customer_email}
+                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Layanan *</label>
+                <select
+                  value={formData.service_type}
+                  onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                >
+                  {SERVICE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Ukuran/Panjang</label>
+                <input
+                  type="text"
+                  value={formData.estimated_size}
+                  onChange={(e) => setFormData({ ...formData, estimated_size: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Contoh: 30cm x 40cm atau 1 meter"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Pengambilan</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, pickup_method: 'pickup' })}
+                    className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      formData.pickup_method === 'pickup' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm font-medium">Ambil Sendiri</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, pickup_method: 'shipping' })}
+                    className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                      formData.pickup_method === 'shipping' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <Truck className="w-4 h-4" />
+                    <span className="text-sm font-medium">Dikirim</span>
+                  </button>
+                </div>
+              </div>
+              {formData.pickup_method === 'shipping' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Alamat Pengiriman</label>
+                    <textarea
+                      value={formData.shipping_address}
+                      onChange={(e) => setFormData({ ...formData, shipping_address: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      placeholder="Alamat lengkap"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Kota</label>
+                    <input
+                      type="text"
+                      value={formData.shipping_city}
+                      onChange={(e) => setFormData({ ...formData, shipping_city: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      placeholder="Nama kota"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Catatan</label>
+                <textarea
+                  value={formData.customer_notes}
+                  onChange={(e) => setFormData({ ...formData, customer_notes: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-border rounded-lg bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                  placeholder="Catatan tambahan..."
+                  rows={2}
+                />
+              </div>
+              <Button
+                variant="accent"
+                className="w-full"
+                onClick={() => createOrderMutation.mutate()}
+                disabled={createOrderMutation.isPending || !formData.customer_name || !formData.customer_phone}
+              >
+                {createOrderMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Buat Order
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-4">

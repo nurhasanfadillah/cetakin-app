@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Upload, X, FileText, Loader2, ArrowLeft, MessageCircle, Check, User, FileImage, MapPin, Truck, StickyNote, ArrowRight } from 'lucide-react'
+import { Upload, X, FileText, Loader2, ArrowLeft, Check, User, FileImage, MapPin, Truck, StickyNote, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 
@@ -129,54 +129,13 @@ export default function OrderPage() {
         }
       }
 
-      setUploadProgress(100)
-      
-      const serviceLabels: Record<string, string> = {
-        'print_dtf_meteran': 'Print DTF Meteran',
-        'print_banyak_desain': 'Print Banyak Desain Sekaligus',
-        'maklon_vendor': 'Maklon Print DTF Vendor',
-        'bantuan_layout': 'Bantuan Layout Hemat Area Cetak',
-        'bantu_desain': 'Bantu Desain Ringan',
-      }
-      
-      const serviceLabel = serviceLabels[data.service_type] || data.service_type
-      const waMessage = `📋 *Order Baru - Cetakin.com*
-
-*Nama:* ${data.customer_name}
-*No. WA:* ${data.customer_phone}
-*Email:* ${data.customer_email || '-'}
-*Layanan:* ${serviceLabel}
-*Ukuran:* ${data.estimated_size || '-'}
-*Deadline:* ${data.deadline || '-'}
-*Pengiriman:* ${data.pickup_method === 'pickup' ? 'Ambil sendiri' : 'Dikirim'}
-${data.pickup_method === 'shipping' ? `*Alamat:* ${data.shipping_address}\n*Kota:* ${data.shipping_city}` : ''}
-*Catatan:* ${data.customer_notes || '-'}
-*No. Order:* ${orderNumber}
-*Jumlah File:* ${files.length}`
-
-      const waUrl = `https://wa.me/6282113133165?text=${encodeURIComponent(waMessage)}`
-      window.open(waUrl, '_blank')
-      navigate(`/order/success/${orderNumber}`)
+navigate(`/order/success/${orderNumber}`)
     } catch (error) {
       console.error('Order submission error:', error)
-      alert('Terjadi kesalahan. Silakan coba lagi.')
+alert('Terjadi kesalahan. Silakan coba lagi.')
     } finally {
       setUploading(false)
     }
-  }
-
-  const openWhatsApp = () => {
-    const msg = `Halo, saya ingin print DTF transfer siap press.
-
-Kebutuhan saya:
-- Jenis order: ${SERVICE_OPTIONS.find(o => o.value === watch('service_type'))?.label}
-- Ukuran desain: ${watch('estimated_size') || '-'}
-- Deadline: ${watch('deadline') || '-'}
-- Kota pengiriman: ${watch('shipping_city') || '-'}
-
-Mohon dilengkapi cek file dan estimasi harganya.`
-    const waUrl = `https://wa.me/6282113133165?text=${encodeURIComponent(msg)}`
-    window.open(waUrl, '_blank')
   }
 
   return (
@@ -473,15 +432,10 @@ Mohon dilengkapi cek file dan estimasi harganya.`
                 </>
               ) : (
                 <>
-                  Kirim Order via WhatsApp
+                  Kirim Order
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
-            </Button>
-
-            <Button type="button" variant="whatsapp" size="lg" onClick={openWhatsApp}>
-              <MessageCircle className="w-5 h-5 mr-2" />
-              Atau chat via WhatsApp dulu
             </Button>
           </div>
         </form>
