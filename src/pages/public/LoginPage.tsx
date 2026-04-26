@@ -17,7 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn, isAdmin } = useAuth()
+  const { signIn } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -44,10 +44,13 @@ export default function LoginPage() {
         return
       }
 
-      if (isAdmin) {
-        navigate('/admin')
+      const loggedInUser = result.user
+      const userRole = loggedInUser?.role
+      
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        navigate('/admin', { replace: true })
       } else {
-        navigate(from)
+        navigate(from, { replace: true })
       }
     } catch (err) {
       console.error('Login error:', err)

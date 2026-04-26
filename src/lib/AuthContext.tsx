@@ -7,7 +7,7 @@ interface AuthContextType {
   isLoading: boolean
   isAdmin: boolean
   isAuthenticated: boolean
-  signIn: (phone: string, password: string) => Promise<{ error: string | null }>
+  signIn: (phone: string, password: string) => Promise<{ error: string | null; user?: Profile }>
   signUp: (data: SignUpData) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: string | null }>
@@ -59,11 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (phone: string, password: string) => {
     try {
-      setIsLoading(true)
-      
       const { data, error } = await supabase.rpc('login_with_phone', {
-        phone: phone,
-        password: password
+        p_phone: phone,
+        p_password: password
       })
 
       if (error) {
@@ -77,19 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = data[0] as Profile
       setUser(profile)
       setStoredSession(profile)
-      return { error: null }
+      return { error: null, user: profile }
     } catch (err: unknown) {
       const error = err as Error
       return { error: error.message || 'Terjadi kesalahan' }
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const signUp = async (data: SignUpData) => {
     try {
-      setIsLoading(true)
-      
       const { error } = await supabase.rpc('register_with_phone', {
         p_full_name: data.fullName,
         p_phone: data.phone,
@@ -105,8 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       const error = err as Error
       return { error: error.message || 'Terjadi kesalahan' }
-    } finally {
-      setIsLoading(false)
     }
   }
 
